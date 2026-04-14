@@ -8,6 +8,16 @@ class FlamantDailySales(models.Model):
     _order = 'date desc'
 
     date = fields.Date(readonly=True)
+    year_num = fields.Integer(string='Year', readonly=True)
+    month_num = fields.Integer(string='Month', readonly=True)
+    weekday_num = fields.Selection(
+        [
+            ('1', 'Monday'), ('2', 'Tuesday'), ('3', 'Wednesday'),
+            ('4', 'Thursday'), ('5', 'Friday'), ('6', 'Saturday'), ('7', 'Sunday'),
+        ],
+        string='Weekday',
+        readonly=True,
+    )
     basis = fields.Selection(
         [
             ('order_intake', 'Order Intake'),
@@ -74,6 +84,12 @@ class FlamantDailySales(models.Model):
                 SELECT
                     ROW_NUMBER() OVER (ORDER BY d.date, d.team_id, d.basis, d.source) AS id,
                     d.date,
+                    EXTRACT(YEAR  FROM d.date)::int AS year_num,
+                    EXTRACT(MONTH FROM d.date)::int AS month_num,
+                    -- PostgreSQL dow: 0=Sun..6=Sat. Remap to ISO Mon=1..Sun=7.
+                    CASE EXTRACT(DOW FROM d.date)::int
+                        WHEN 0 THEN '7' ELSE EXTRACT(DOW FROM d.date)::text
+                    END AS weekday_num,
                     d.basis,
                     d.team_id,
                     t.x_channel        AS channel,
