@@ -37,6 +37,9 @@ class FlamantDailySales(models.Model):
     currency_id = fields.Many2one('res.currency', readonly=True)
 
     def init(self):
+        # V18 specifics:
+        # - pos_order has no currency_id column; derive it via res_company.
+        # - crm_team.name is a jsonb translated field; extract via ->>'en_US'.
         tools.drop_view_if_exists(self.env.cr, self._table)
         self.env.cr.execute(
             f"""
@@ -47,19 +50,18 @@ class FlamantDailySales(models.Model):
                     d.team_id,
                     t.x_channel        AS channel,
                     t.x_country_code   AS country_code,
-                    COALESCE(NULLIF(t.x_shop_label, ''), t.name) AS shop_label,
+                    COALESCE(NULLIF(t.x_shop_label, ''), t.name->>'en_US') AS shop_label,
                     d.source,
                     d.amount_untaxed,
                     d.company_id,
-                    d.currency_id
+                    rc.currency_id     AS currency_id
                 FROM (
                     SELECT
                         po.date_order::date                AS date,
                         po.crm_team_id                     AS team_id,
                         'pos'::varchar                     AS source,
                         (po.amount_total - po.amount_tax)  AS amount_untaxed,
-                        po.company_id                      AS company_id,
-                        po.currency_id                     AS currency_id
+                        po.company_id                      AS company_id
                     FROM pos_order po
                     WHERE po.state NOT IN ('cancel', 'draft')
                       AND po.crm_team_id IS NOT NULL
@@ -69,13 +71,13 @@ class FlamantDailySales(models.Model):
                         so.team_id                         AS team_id,
                         'sale'::varchar                    AS source,
                         so.amount_untaxed                  AS amount_untaxed,
-                        so.company_id                      AS company_id,
-                        so.currency_id                     AS currency_id
+                        so.company_id                      AS company_id
                     FROM sale_order so
                     WHERE so.state IN ('sale', 'done')
                       AND so.team_id IS NOT NULL
                 ) d
-                LEFT JOIN crm_team t ON t.id = d.team_id
+                LEFT JOIN crm_team    t  ON t.id  = d.team_id
+                LEFT JOIN res_company rc ON rc.id = d.company_id
             )
             """
         )
