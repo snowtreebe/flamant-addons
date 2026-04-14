@@ -66,9 +66,10 @@ class FlamantMonthlyBudget(models.Model):
                     t.x_comp_status                    AS comp_status,
                     bl.budget_amount                   AS amount,
                     bl.company_id                      AS company_id,
-                    bl.currency_id                     AS currency_id
+                    rc.currency_id                     AS currency_id
                 FROM budget_line bl
-                JOIN crm_team t ON t.x_analytic_account_id = bl.account_id
+                JOIN crm_team     t  ON t.x_analytic_account_id = bl.account_id
+                JOIN res_company  rc ON rc.id = bl.company_id
                 WHERE bl.account_id IS NOT NULL
             )
             """
