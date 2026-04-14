@@ -10,6 +10,8 @@
                     <field name="x_channel"/>
                     <field name="x_country_code"/>
                     <field name="x_shop_label"/>
+                    <field name="x_shop_cluster"/>
+                    <field name="x_comp_status"/>
                 </group>
             </xpath>
         </field>
@@ -24,6 +26,8 @@
                 <field name="x_channel" optional="show"/>
                 <field name="x_country_code" optional="show"/>
                 <field name="x_shop_label" optional="show"/>
+                <field name="x_shop_cluster" optional="show"/>
+                <field name="x_comp_status" optional="hide"/>
             </xpath>
         </field>
     </record>
