@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_flamant_daily_sales_user,flamant.daily.sales user,model_flamant_daily_sales,sales_team.group_sale_salesman,1,0,0,0
+access_flamant_daily_sales_manager,flamant.daily.sales manager,model_flamant_daily_sales,sales_team.group_sale_manager,1,0,0,0
+access_flamant_shop_budget_user,flamant.shop.budget user,model_flamant_shop_budget,sales_team.group_sale_salesman,1,0,0,0
+access_flamant_shop_budget_manager,flamant.shop.budget manager,model_flamant_shop_budget,sales_team.group_sale_manager,1,1,1,1

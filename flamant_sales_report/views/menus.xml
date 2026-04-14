@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_flamant_sales_root"
+              name="Flamant Sales"
+              sequence="25"
+              web_icon="flamant_sales_report,static/description/icon.png"/>
+
+    <menuitem id="menu_flamant_daily_sales"
+              name="Daily Sales"
+              parent="menu_flamant_sales_root"
+              action="action_flamant_daily_sales"
+              sequence="10"/>
+
+    <menuitem id="menu_flamant_shop_budget"
+              name="Budget"
+              parent="menu_flamant_sales_root"
+              action="action_flamant_shop_budget"
+              sequence="20"/>
+</odoo>

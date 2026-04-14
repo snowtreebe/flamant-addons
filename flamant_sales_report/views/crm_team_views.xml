@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="crm_team_view_form_inherit" model="ir.ui.view">
+        <field name="name">crm.team.view.form.flamant</field>
+        <field name="model">crm.team</field>
+        <field name="inherit_id" ref="sales_team.crm_team_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="Flamant Reporting">
+                    <field name="x_channel"/>
+                    <field name="x_country_code"/>
+                    <field name="x_shop_label"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="crm_team_view_tree_inherit" model="ir.ui.view">
+        <field name="name">crm.team.view.tree.flamant</field>
+        <field name="model">crm.team</field>
+        <field name="inherit_id" ref="sales_team.crm_team_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="x_channel" optional="show"/>
+                <field name="x_country_code" optional="show"/>
+                <field name="x_shop_label" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

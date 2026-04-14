@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="flamant_shop_budget_view_tree" model="ir.ui.view">
+        <field name="name">flamant.shop.budget.tree</field>
+        <field name="model">flamant.shop.budget</field>
+        <field name="arch" type="xml">
+            <list string="Shop Budget" editable="bottom">
+                <field name="team_id"/>
+                <field name="shop_label" optional="show"/>
+                <field name="channel" optional="show"/>
+                <field name="country_code" optional="show"/>
+                <field name="year"/>
+                <field name="month"/>
+                <field name="amount" sum="Total"/>
+                <field name="currency_id" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="flamant_shop_budget_view_form" model="ir.ui.view">
+        <field name="name">flamant.shop.budget.form</field>
+        <field name="model">flamant.shop.budget</field>
+        <field name="arch" type="xml">
+            <form string="Shop Budget">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="team_id"/>
+                            <field name="shop_label" readonly="1"/>
+                            <field name="channel" readonly="1"/>
+                            <field name="country_code" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="year"/>
+                            <field name="month"/>
+                            <field name="amount"/>
+                            <field name="currency_id" groups="base.group_multi_currency"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="flamant_shop_budget_view_search" model="ir.ui.view">
+        <field name="name">flamant.shop.budget.search</field>
+        <field name="model">flamant.shop.budget</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="team_id"/>
+                <field name="shop_label"/>
+                <field name="year"/>
+                <group expand="1" string="Group By">
+                    <filter name="group_year" string="Year" context="{'group_by':'year'}"/>
+                    <filter name="group_channel" string="Channel" context="{'group_by':'channel'}"/>
+                    <filter name="group_shop" string="Shop" context="{'group_by':'shop_label'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="flamant_shop_budget_view_pivot" model="ir.ui.view">
+        <field name="name">flamant.shop.budget.pivot</field>
+        <field name="model">flamant.shop.budget</field>
+        <field name="arch" type="xml">
+            <pivot string="Shop Budget" sample="1">
+                <field name="channel" type="row"/>
+                <field name="shop_label" type="row"/>
+                <field name="period_start" type="col" interval="month"/>
+                <field name="amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_flamant_shop_budget" model="ir.actions.act_window">
+        <field name="name">Shop Budget</field>
+        <field name="res_model">flamant.shop.budget</field>
+        <field name="view_mode">list,pivot,form</field>
+        <field name="search_view_id" ref="flamant_shop_budget_view_search"/>
+    </record>
+</odoo>
