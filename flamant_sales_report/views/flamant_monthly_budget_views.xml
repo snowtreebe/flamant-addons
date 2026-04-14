@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="flamant_monthly_budget_view_tree" model="ir.ui.view">
+        <field name="name">flamant.monthly.budget.tree</field>
+        <field name="model">flamant.monthly.budget</field>
+        <field name="arch" type="xml">
+            <list string="Monthly Budget" create="false" edit="false" delete="false">
+                <field name="period_start"/>
+                <field name="channel"/>
+                <field name="country_code"/>
+                <field name="shop_cluster"/>
+                <field name="team_id" optional="hide"/>
+                <field name="analytic_account_id" optional="hide"/>
+                <field name="amount" sum="Total"/>
+                <field name="currency_id" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="flamant_monthly_budget_view_pivot" model="ir.ui.view">
+        <field name="name">flamant.monthly.budget.pivot</field>
+        <field name="model">flamant.monthly.budget</field>
+        <field name="arch" type="xml">
+            <pivot string="Monthly Budget" sample="1">
+                <field name="channel" type="row"/>
+                <field name="country_code" type="row"/>
+                <field name="shop_cluster" type="row"/>
+                <field name="period_start" type="col" interval="month"/>
+                <field name="amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="flamant_monthly_budget_view_search" model="ir.ui.view">
+        <field name="name">flamant.monthly.budget.search</field>
+        <field name="model">flamant.monthly.budget</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="team_id"/>
+                <field name="shop_cluster"/>
+                <filter name="date_filter" string="Period" date="period_start"/>
+                <group expand="1" string="Group By">
+                    <filter name="group_year" string="Year" context="{'group_by':'year_num'}"/>
+                    <filter name="group_channel" string="Channel" context="{'group_by':'channel'}"/>
+                    <filter name="group_shop" string="Shop Cluster" context="{'group_by':'shop_cluster'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_flamant_monthly_budget" model="ir.actions.act_window">
+        <field name="name">Monthly Budget</field>
+        <field name="res_model">flamant.monthly.budget</field>
+        <field name="view_mode">pivot,list</field>
+        <field name="search_view_id" ref="flamant_monthly_budget_view_search"/>
+    </record>
+</odoo>

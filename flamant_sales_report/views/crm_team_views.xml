@@ -12,6 +12,7 @@
                     <field name="x_shop_label"/>
                     <field name="x_shop_cluster"/>
                     <field name="x_comp_status"/>
+                    <field name="x_analytic_account_id"/>
                 </group>
             </xpath>
         </field>

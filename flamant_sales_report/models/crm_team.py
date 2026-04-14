@@ -43,6 +43,12 @@ class CrmTeam(models.Model):
         default='comparible',
         help='Used for Year-over-Year comparisons. New or temporary shops (pop-ups, new openings) are Non-Comparible.',
     )
+    x_analytic_account_id = fields.Many2one(
+        'account.analytic.account',
+        string='Budget Analytic Account',
+        help='Analytic account used to pull budget data from Odoo\'s native `account.budget`. '
+             'Pick one analytic account per sales team / shop cluster.',
+    )
 
     def action_flamant_remap(self):
         """Re-run the auto-mapping of channel / country / shop / cluster / comp."""

@@ -12,8 +12,14 @@
               sequence="10"/>
 
     <menuitem id="menu_flamant_shop_budget"
-              name="Budget"
+              name="Budget (legacy)"
               parent="menu_flamant_sales_root"
               action="action_flamant_shop_budget"
+              sequence="30"/>
+
+    <menuitem id="menu_flamant_monthly_budget"
+              name="Monthly Budget"
+              parent="menu_flamant_sales_root"
+              action="action_flamant_monthly_budget"
               sequence="20"/>
 </odoo>
