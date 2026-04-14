@@ -28,7 +28,6 @@ class CrmTeam(models.Model):
         help='Human-readable shop name for the report. Falls back to the team name when empty.',
     )
 
-    @api.model
     def action_flamant_remap(self):
         """Re-run the auto-mapping of channel / country / shop for all teams.
 
