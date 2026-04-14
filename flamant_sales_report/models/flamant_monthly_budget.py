@@ -29,6 +29,7 @@ class FlamantMonthlyBudget(models.Model):
             ('wholesale',    'Wholesale'),
             ('franchise',    'Franchise'),
             ('flamant_home', 'Flamant@Home'),
+            ('outlet',       'Outlet'),
             ('other',        'Other'),
         ],
         readonly=True,

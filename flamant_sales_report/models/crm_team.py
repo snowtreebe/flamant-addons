@@ -11,6 +11,7 @@ class CrmTeam(models.Model):
             ('wholesale',    'Wholesale'),
             ('franchise',    'Franchise'),
             ('flamant_home', 'Flamant@Home'),
+            ('outlet',       'Outlet'),
             ('other',        'Other'),
         ],
         string='Sales Channel',
