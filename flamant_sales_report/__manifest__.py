@@ -25,6 +25,7 @@ Flamant Sales Report
         'views/flamant_shop_budget_views.xml',
         'views/menus.xml',
     ],
+    'assets': {},
     'post_init_hook': 'post_init_hook',
     'installable': True,
     'application': False,
