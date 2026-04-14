@@ -1,4 +1,4 @@
-from odoo import fields, models
+from odoo import api, fields, models
 
 
 class CrmTeam(models.Model):
@@ -27,3 +27,15 @@ class CrmTeam(models.Model):
         string='Shop Label',
         help='Human-readable shop name for the report. Falls back to the team name when empty.',
     )
+
+    @api.model
+    def action_flamant_remap(self):
+        """Re-run the auto-mapping of channel / country / shop for all teams.
+
+        Teams with an explicit (non-'other') channel are preserved; teams on
+        the 'other' fallback are re-evaluated against the latest rules in
+        `hooks.TEAM_DEFAULTS`. Callable from the backend or via XMLRPC.
+        """
+        from ..hooks import _flamant_remap
+        _flamant_remap(self.env)
+        return True
