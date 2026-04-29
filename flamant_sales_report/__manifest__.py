@@ -1,15 +1,26 @@
 {
-    'name': 'Flamant Sales Report',
-    'version': '18.0.1.1.0',
+    'name': 'Flamant Orders',
+    'version': '18.0.2.0.0',
     'category': 'Sales/Sales',
-    'summary': 'Consolidated POS + Sales reporting by channel/country/shop with budget',
+    'summary': 'Consolidated POS + Sales order view with source drilldown per shop/channel',
     'description': """
-Flamant Sales Report
-====================
-- Extends crm.team with channel, country and shop label metadata
-- Consolidates pos.order + sale.order into a single SQL view flamant.daily.sales
-- Adds a monthly budget model per team (flamant.shop.budget)
-- Pivot + list views as the source for the Odoo Spreadsheet dashboard
+Flamant Orders
+==============
+Consolidates pos.order, sale.order, and customer invoices into a single
+read-only SQL view (flamant.daily.sales) with two dedicated menu entries:
+
+- **Invoiced Sales** — all rows with basis = invoiced
+- **Order Intake**  — all rows with basis = order_intake
+
+Each row carries a clickable Document link back to the originating POS
+order, sales order, or invoice (source_ref + source_doc Reference field).
+
+Dimensions available per row: date, channel, country, shop label, source.
+
+Additionally extends crm.team with Flamant-specific reporting metadata
+(channel, country, shop label, shop cluster, analytic account) and keeps
+the legacy flamant.shop.budget and flamant.monthly.budget models for
+future budget reporting (menus hidden pending budget v2).
 """,
     'author': 'Digisolid',
     'website': 'https://digisolid.be',
