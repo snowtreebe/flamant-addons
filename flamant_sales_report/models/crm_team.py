@@ -1,7 +1,13 @@
-from odoo import api, fields, models
+from odoo import fields, models
 
 
 class CrmTeam(models.Model):
+    """Extends crm.team with Flamant-specific reporting metadata.
+
+    These fields drive the channel/country/shop dimensions in
+    flamant.daily.sales and flamant.monthly.budget views.
+    """
+
     _inherit = 'crm.team'
 
     x_channel = fields.Selection(
@@ -33,26 +39,17 @@ class CrmTeam(models.Model):
     )
     x_shop_cluster = fields.Char(
         string='Shop Cluster',
-        help='Most granular reporting unit (e.g. "Flamant Sablon", "Wholesale - Internal", "E-Comm BE").',
-    )
-    x_comp_status = fields.Selection(
-        [
-            ('comparible',     'Comparible'),
-            ('non_comparible', 'Non-Comparible'),
-        ],
-        string='Comparability',
-        default='comparible',
-        help='Used for Year-over-Year comparisons. New or temporary shops (pop-ups, new openings) are Non-Comparible.',
+        help='Most granular reporting unit (e.g. "Flamant Sablon", "Wholesale - Internal").',
     )
     x_analytic_account_id = fields.Many2one(
         'account.analytic.account',
         string='Budget Analytic Account',
-        help='Analytic account used to pull budget data from Odoo\'s native `account.budget`. '
-             'Pick one analytic account per sales team / shop cluster.',
+        help='Analytic account used to pull budget data from account.budget. '
+             'One analytic account per sales team / shop cluster.',
     )
 
     def action_flamant_remap(self):
-        """Re-run the auto-mapping of channel / country / shop / cluster / comp."""
+        """Re-run the auto-mapping of channel / country / shop / cluster."""
         from ..hooks import _flamant_remap
         _flamant_remap(self.env)
         return True
