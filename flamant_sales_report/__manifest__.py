@@ -1,6 +1,6 @@
 {
     'name': 'Flamant Orders',
-    'version': '18.0.2.0.0',
+    'version': '18.0.3.0.0',
     'category': 'Sales/Sales',
     'summary': 'Consolidated POS + Sales order view with source drilldown per shop/channel',
     'description': """
@@ -11,6 +11,7 @@ read-only SQL view (flamant.daily.sales) with two dedicated menu entries:
 
 - **Invoiced Sales** — all rows with basis = invoiced
 - **Order Intake**  — all rows with basis = order_intake
+- **Quotations**    — open and cancelled sale.order records (draft, sent, cancel)
 
 Each row carries a clickable Document link back to the originating POS
 order, sales order, or invoice (source_ref + source_doc Reference field).
@@ -34,6 +35,7 @@ future budget reporting (menus hidden pending budget v2).
         'security/ir.model.access.csv',
         'views/crm_team_views.xml',
         'views/flamant_daily_sales_views.xml',
+        'views/flamant_quotation_views.xml',
         'views/flamant_shop_budget_views.xml',
         'views/flamant_monthly_budget_views.xml',
         'views/menus.xml',

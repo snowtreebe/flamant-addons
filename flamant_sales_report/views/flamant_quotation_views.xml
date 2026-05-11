@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Search view
+         ================================================================ -->
+    <record id="flamant_quotation_view_search" model="ir.ui.view">
+        <field name="name">flamant.quotation.search</field>
+        <field name="model">flamant.quotation</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="source_ref" string="Reference"/>
+                <field name="partner_id"/>
+                <field name="team_id"/>
+                <field name="user_id"/>
+                <field name="shop_label"/>
+                <separator/>
+                <filter name="open" string="Open"
+                        domain="[('state','in',['draft','sent'])]"/>
+                <filter name="draft" string="Quotation"
+                        domain="[('state','=','draft')]"/>
+                <filter name="sent" string="Quotation Sent"
+                        domain="[('state','=','sent')]"/>
+                <filter name="cancel" string="Cancelled"
+                        domain="[('state','=','cancel')]"/>
+                <separator/>
+                <filter name="date_filter" string="Date" date="date"/>
+                <filter name="validity_filter" string="Validity" date="validity_date"/>
+                <separator/>
+                <filter name="expired" string="Expired"
+                        domain="[('validity_date','&lt;',context_today().strftime('%Y-%m-%d')),
+                                 ('state','in',['draft','sent'])]"/>
+                <group expand="1" string="Group By">
+                    <filter name="group_state"     string="Status"      context="{'group_by':'state'}"/>
+                    <filter name="group_team"      string="Sales Team"  context="{'group_by':'team_id'}"/>
+                    <filter name="group_user"      string="Salesperson" context="{'group_by':'user_id'}"/>
+                    <filter name="group_channel"   string="Channel"     context="{'group_by':'channel'}"/>
+                    <filter name="group_country"   string="Country"     context="{'group_by':'country_code'}"/>
+                    <filter name="group_shop"      string="Shop"        context="{'group_by':'shop_label'}"/>
+                    <filter name="group_partner"   string="Customer"    context="{'group_by':'partner_id'}"/>
+                    <filter name="group_date_week" string="Week"        context="{'group_by':'date:week'}"/>
+                    <filter name="group_date_month" string="Month"      context="{'group_by':'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         List view
+         ================================================================ -->
+    <record id="flamant_quotation_view_tree" model="ir.ui.view">
+        <field name="name">flamant.quotation.tree</field>
+        <field name="model">flamant.quotation</field>
+        <field name="arch" type="xml">
+            <list string="Quotations" create="false" edit="false" delete="false"
+                  decoration-muted="state == 'cancel'"
+                  decoration-info="state == 'draft'">
+                <field name="date"/>
+                <field name="channel"/>
+                <field name="country_code"/>
+                <field name="partner_id"/>
+                <field name="source_ref" string="Reference"/>
+                <field name="source_doc" widget="reference" readonly="1"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'sent'"
+                       decoration-muted="state == 'cancel'"/>
+                <field name="team_id"/>
+                <field name="user_id" string="Salesperson"/>
+                <field name="validity_date" optional="show"/>
+                <field name="shop_label" optional="hide"/>
+                <field name="amount_untaxed" sum="Total"/>
+                <field name="currency_id" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Pivot view
+         ================================================================ -->
+    <record id="flamant_quotation_view_pivot" model="ir.ui.view">
+        <field name="name">flamant.quotation.pivot</field>
+        <field name="model">flamant.quotation</field>
+        <field name="arch" type="xml">
+            <pivot string="Quotations">
+                <field name="state" type="col"/>
+                <field name="team_id" type="row"/>
+                <field name="amount_untaxed" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Graph view
+         ================================================================ -->
+    <record id="flamant_quotation_view_graph" model="ir.ui.view">
+        <field name="name">flamant.quotation.graph</field>
+        <field name="model">flamant.quotation</field>
+        <field name="arch" type="xml">
+            <graph string="Quotations" type="bar" sample="1">
+                <field name="date" interval="week"/>
+                <field name="state"/>
+                <field name="amount_untaxed" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Action
+         ================================================================ -->
+    <record id="action_flamant_quotation" model="ir.actions.act_window">
+        <field name="name">Quotations</field>
+        <field name="res_model">flamant.quotation</field>
+        <field name="view_mode">list,graph,pivot</field>
+        <field name="search_view_id" ref="flamant_quotation_view_search"/>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Geen offertes gevonden</p>
+        </field>
+    </record>
+
+</odoo>

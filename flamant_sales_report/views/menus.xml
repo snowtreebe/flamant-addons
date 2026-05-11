@@ -5,10 +5,10 @@
               sequence="25"
               web_icon="flamant_sales_report,static/description/icon.png"/>
 
-    <menuitem id="menu_flamant_daily_sales_invoiced"
-              name="Invoiced Sales"
+    <menuitem id="menu_flamant_quotation"
+              name="Quotations"
               parent="menu_flamant_sales_root"
-              action="action_flamant_daily_sales_invoiced"
+              action="action_flamant_quotation"
               sequence="10"/>
 
     <menuitem id="menu_flamant_daily_sales_intake"
@@ -16,4 +16,10 @@
               parent="menu_flamant_sales_root"
               action="action_flamant_daily_sales_intake"
               sequence="20"/>
+
+    <menuitem id="menu_flamant_daily_sales_invoiced"
+              name="Invoiced Sales"
+              parent="menu_flamant_sales_root"
+              action="action_flamant_daily_sales_invoiced"
+              sequence="30"/>
 </odoo>
