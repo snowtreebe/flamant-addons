@@ -1,11 +1,11 @@
 {
-    'name': 'Flamant Orders',
-    'version': '18.0.3.0.0',
+    'name': 'Flamant KPI',
+    'version': '18.0.4.0.0',
     'category': 'Sales/Sales',
-    'summary': 'Consolidated POS + Sales order view with source drilldown per shop/channel',
+    'summary': 'Consolidated POS + Sales KPI dashboard with channel / country / shop drilldown',
     'description': """
-Flamant Orders
-==============
+Flamant KPI
+===========
 Consolidates pos.order, sale.order, and customer invoices into a single
 read-only SQL view (flamant.daily.sales) with two dedicated menu entries:
 

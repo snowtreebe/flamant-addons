@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <menuitem id="menu_flamant_sales_root"
-              name="Flamant Orders"
+              name="Flamant KPI"
               sequence="25"
               web_icon="flamant_sales_report,static/description/icon.png"/>
 
