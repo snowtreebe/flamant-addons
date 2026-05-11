@@ -1,19 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!--
-        Marge-rapport per kanaal
-        ========================
-        Native account.report (Enterprise) that breaks revenue + COGS down by
-        Flamant sales channel (Shops / Ecommerce / Wholesale / Franchise /
-        Outlet / Flamant@Home / Other) and computes Marge and %Marge per
-        channel plus a grand total.
-
-        Revenue is detected on accounts matching 70%, COGS on 604%, both
-        filtered by the move's sales team channel (crm.team.x_channel).
-
-        The standard account.report filters (date range, period comparison,
-        growth comparison, budgets) are enabled — users pick comparison
-        columns from the UI.
+        ================================================================
+        Marge-rapport per kanaal  (compact view)
+        ================================================================
+        Native Odoo Enterprise account.report. Layout:
+          - 4 columns: Omzet · COGS · Marge · % Marge
+          - 1 row per channel (Shops, Ecommerce, Wholesale, Franchise,
+            Outlet, Flamant@Home, Other) + TOTAAL
+        Comparison + budget + drafts filters enabled.
     -->
 
     <record id="flamant_margin_report" model="account.report">
@@ -26,25 +21,32 @@
         <field name="filter_unfold_all">True</field>
         <field name="default_opening_date_filter">this_month</field>
         <field name="column_ids">
-            <record id="flamant_margin_col_balance" model="account.report.column">
-                <field name="name">Bedrag</field>
-                <field name="expression_label">balance</field>
+            <record id="flamant_margin_col_omzet" model="account.report.column">
+                <field name="name">Omzet</field>
+                <field name="expression_label">omzet</field>
                 <field name="figure_type">monetary</field>
+                <field name="sequence">1</field>
+            </record>
+            <record id="flamant_margin_col_cogs" model="account.report.column">
+                <field name="name">COGS</field>
+                <field name="expression_label">cogs</field>
+                <field name="figure_type">monetary</field>
+                <field name="sequence">2</field>
+            </record>
+            <record id="flamant_margin_col_marge" model="account.report.column">
+                <field name="name">Marge</field>
+                <field name="expression_label">marge</field>
+                <field name="figure_type">monetary</field>
+                <field name="sequence">3</field>
+            </record>
+            <record id="flamant_margin_col_pct" model="account.report.column">
+                <field name="name">% Marge</field>
+                <field name="expression_label">pct</field>
+                <field name="figure_type">percentage</field>
+                <field name="sequence">4</field>
             </record>
         </field>
     </record>
-
-    <!--
-        ============================================================
-        Reusable line template
-        ============================================================
-        Per channel we emit four lines:
-          - REV_<channel>      : revenue (account 70%, channel filter), -sum
-          - COGS_<channel>     : cost of goods (account 604%, channel filter), sum
-          - MARGE_<channel>    : aggregation = REV - COGS
-          - PCT_<channel>      : aggregation = MARGE / REV * 100
-        The channel header line has children unfolded by default.
-    -->
 
     <!-- ============ SHOPS ============ -->
     <record id="flamant_margin_line_shops" model="account.report.line">
@@ -52,63 +54,33 @@
         <field name="name">Shops</field>
         <field name="code">FLM_SHOPS</field>
         <field name="sequence">10</field>
-        <field name="hierarchy_level">0</field>
     </record>
-    <record id="flamant_margin_line_shops_rev" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_shops"/>
-        <field name="name">Omzet</field>
-        <field name="code">FLM_REV_SHOPS</field>
-        <field name="sequence">11</field>
-    </record>
-    <record id="flamant_margin_expr_shops_rev" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_shops_rev"/>
-        <field name="label">balance</field>
+    <record id="flamant_margin_expr_shops_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_line_shops"/>
+        <field name="label">omzet</field>
         <field name="engine">domain</field>
         <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'shops')]</field>
         <field name="subformula">-sum</field>
     </record>
-    <record id="flamant_margin_line_shops_cogs" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_shops"/>
-        <field name="name">COGS</field>
-        <field name="code">FLM_COGS_SHOPS</field>
-        <field name="sequence">12</field>
-    </record>
     <record id="flamant_margin_expr_shops_cogs" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_shops_cogs"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_shops"/>
+        <field name="label">cogs</field>
         <field name="engine">domain</field>
         <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'shops')]</field>
         <field name="subformula">sum</field>
     </record>
-    <record id="flamant_margin_line_shops_marge" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_shops"/>
-        <field name="name">Marge</field>
-        <field name="code">FLM_MARGE_SHOPS</field>
-        <field name="sequence">13</field>
-    </record>
     <record id="flamant_margin_expr_shops_marge" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_shops_marge"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_shops"/>
+        <field name="label">marge</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_REV_SHOPS.balance - FLM_COGS_SHOPS.balance</field>
-    </record>
-    <record id="flamant_margin_line_shops_pct" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_shops"/>
-        <field name="name">% Marge</field>
-        <field name="code">FLM_PCT_SHOPS</field>
-        <field name="sequence">14</field>
+        <field name="formula">FLM_SHOPS.omzet - FLM_SHOPS.cogs</field>
     </record>
     <record id="flamant_margin_expr_shops_pct" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_shops_pct"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_shops"/>
+        <field name="label">pct</field>
         <field name="engine">aggregation</field>
-        <field name="formula">100 * FLM_MARGE_SHOPS.balance / FLM_REV_SHOPS.balance</field>
+        <field name="formula">100 * FLM_SHOPS.marge / FLM_SHOPS.omzet</field>
         <field name="subformula">ignore_zero_division</field>
-        <field name="figure_type">percentage</field>
     </record>
 
     <!-- ============ ECOMMERCE ============ -->
@@ -118,61 +90,32 @@
         <field name="code">FLM_ECOM</field>
         <field name="sequence">20</field>
     </record>
-    <record id="flamant_margin_line_ecom_rev" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_ecom"/>
-        <field name="name">Omzet</field>
-        <field name="code">FLM_REV_ECOM</field>
-        <field name="sequence">21</field>
-    </record>
-    <record id="flamant_margin_expr_ecom_rev" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_ecom_rev"/>
-        <field name="label">balance</field>
+    <record id="flamant_margin_expr_ecom_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_line_ecom"/>
+        <field name="label">omzet</field>
         <field name="engine">domain</field>
         <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'ecommerce')]</field>
         <field name="subformula">-sum</field>
     </record>
-    <record id="flamant_margin_line_ecom_cogs" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_ecom"/>
-        <field name="name">COGS</field>
-        <field name="code">FLM_COGS_ECOM</field>
-        <field name="sequence">22</field>
-    </record>
     <record id="flamant_margin_expr_ecom_cogs" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_ecom_cogs"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_ecom"/>
+        <field name="label">cogs</field>
         <field name="engine">domain</field>
         <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'ecommerce')]</field>
         <field name="subformula">sum</field>
     </record>
-    <record id="flamant_margin_line_ecom_marge" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_ecom"/>
-        <field name="name">Marge</field>
-        <field name="code">FLM_MARGE_ECOM</field>
-        <field name="sequence">23</field>
-    </record>
     <record id="flamant_margin_expr_ecom_marge" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_ecom_marge"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_ecom"/>
+        <field name="label">marge</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_REV_ECOM.balance - FLM_COGS_ECOM.balance</field>
-    </record>
-    <record id="flamant_margin_line_ecom_pct" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_ecom"/>
-        <field name="name">% Marge</field>
-        <field name="code">FLM_PCT_ECOM</field>
-        <field name="sequence">24</field>
+        <field name="formula">FLM_ECOM.omzet - FLM_ECOM.cogs</field>
     </record>
     <record id="flamant_margin_expr_ecom_pct" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_ecom_pct"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_ecom"/>
+        <field name="label">pct</field>
         <field name="engine">aggregation</field>
-        <field name="formula">100 * FLM_MARGE_ECOM.balance / FLM_REV_ECOM.balance</field>
+        <field name="formula">100 * FLM_ECOM.marge / FLM_ECOM.omzet</field>
         <field name="subformula">ignore_zero_division</field>
-        <field name="figure_type">percentage</field>
     </record>
 
     <!-- ============ WHOLESALE ============ -->
@@ -182,61 +125,32 @@
         <field name="code">FLM_WHS</field>
         <field name="sequence">30</field>
     </record>
-    <record id="flamant_margin_line_wholesale_rev" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_wholesale"/>
-        <field name="name">Omzet</field>
-        <field name="code">FLM_REV_WHS</field>
-        <field name="sequence">31</field>
-    </record>
-    <record id="flamant_margin_expr_wholesale_rev" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_wholesale_rev"/>
-        <field name="label">balance</field>
+    <record id="flamant_margin_expr_wholesale_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_line_wholesale"/>
+        <field name="label">omzet</field>
         <field name="engine">domain</field>
         <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'wholesale')]</field>
         <field name="subformula">-sum</field>
     </record>
-    <record id="flamant_margin_line_wholesale_cogs" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_wholesale"/>
-        <field name="name">COGS</field>
-        <field name="code">FLM_COGS_WHS</field>
-        <field name="sequence">32</field>
-    </record>
     <record id="flamant_margin_expr_wholesale_cogs" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_wholesale_cogs"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_wholesale"/>
+        <field name="label">cogs</field>
         <field name="engine">domain</field>
         <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'wholesale')]</field>
         <field name="subformula">sum</field>
     </record>
-    <record id="flamant_margin_line_wholesale_marge" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_wholesale"/>
-        <field name="name">Marge</field>
-        <field name="code">FLM_MARGE_WHS</field>
-        <field name="sequence">33</field>
-    </record>
     <record id="flamant_margin_expr_wholesale_marge" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_wholesale_marge"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_wholesale"/>
+        <field name="label">marge</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_REV_WHS.balance - FLM_COGS_WHS.balance</field>
-    </record>
-    <record id="flamant_margin_line_wholesale_pct" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_wholesale"/>
-        <field name="name">% Marge</field>
-        <field name="code">FLM_PCT_WHS</field>
-        <field name="sequence">34</field>
+        <field name="formula">FLM_WHS.omzet - FLM_WHS.cogs</field>
     </record>
     <record id="flamant_margin_expr_wholesale_pct" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_wholesale_pct"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_wholesale"/>
+        <field name="label">pct</field>
         <field name="engine">aggregation</field>
-        <field name="formula">100 * FLM_MARGE_WHS.balance / FLM_REV_WHS.balance</field>
+        <field name="formula">100 * FLM_WHS.marge / FLM_WHS.omzet</field>
         <field name="subformula">ignore_zero_division</field>
-        <field name="figure_type">percentage</field>
     </record>
 
     <!-- ============ FRANCHISE ============ -->
@@ -246,61 +160,32 @@
         <field name="code">FLM_FRAN</field>
         <field name="sequence">40</field>
     </record>
-    <record id="flamant_margin_line_franchise_rev" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_franchise"/>
-        <field name="name">Omzet</field>
-        <field name="code">FLM_REV_FRAN</field>
-        <field name="sequence">41</field>
-    </record>
-    <record id="flamant_margin_expr_franchise_rev" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_franchise_rev"/>
-        <field name="label">balance</field>
+    <record id="flamant_margin_expr_franchise_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_line_franchise"/>
+        <field name="label">omzet</field>
         <field name="engine">domain</field>
         <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'franchise')]</field>
         <field name="subformula">-sum</field>
     </record>
-    <record id="flamant_margin_line_franchise_cogs" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_franchise"/>
-        <field name="name">COGS</field>
-        <field name="code">FLM_COGS_FRAN</field>
-        <field name="sequence">42</field>
-    </record>
     <record id="flamant_margin_expr_franchise_cogs" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_franchise_cogs"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_franchise"/>
+        <field name="label">cogs</field>
         <field name="engine">domain</field>
         <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'franchise')]</field>
         <field name="subformula">sum</field>
     </record>
-    <record id="flamant_margin_line_franchise_marge" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_franchise"/>
-        <field name="name">Marge</field>
-        <field name="code">FLM_MARGE_FRAN</field>
-        <field name="sequence">43</field>
-    </record>
     <record id="flamant_margin_expr_franchise_marge" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_franchise_marge"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_franchise"/>
+        <field name="label">marge</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_REV_FRAN.balance - FLM_COGS_FRAN.balance</field>
-    </record>
-    <record id="flamant_margin_line_franchise_pct" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_franchise"/>
-        <field name="name">% Marge</field>
-        <field name="code">FLM_PCT_FRAN</field>
-        <field name="sequence">44</field>
+        <field name="formula">FLM_FRAN.omzet - FLM_FRAN.cogs</field>
     </record>
     <record id="flamant_margin_expr_franchise_pct" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_franchise_pct"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_franchise"/>
+        <field name="label">pct</field>
         <field name="engine">aggregation</field>
-        <field name="formula">100 * FLM_MARGE_FRAN.balance / FLM_REV_FRAN.balance</field>
+        <field name="formula">100 * FLM_FRAN.marge / FLM_FRAN.omzet</field>
         <field name="subformula">ignore_zero_division</field>
-        <field name="figure_type">percentage</field>
     </record>
 
     <!-- ============ OUTLET ============ -->
@@ -310,61 +195,32 @@
         <field name="code">FLM_OUT</field>
         <field name="sequence">50</field>
     </record>
-    <record id="flamant_margin_line_outlet_rev" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_outlet"/>
-        <field name="name">Omzet</field>
-        <field name="code">FLM_REV_OUT</field>
-        <field name="sequence">51</field>
-    </record>
-    <record id="flamant_margin_expr_outlet_rev" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_outlet_rev"/>
-        <field name="label">balance</field>
+    <record id="flamant_margin_expr_outlet_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_line_outlet"/>
+        <field name="label">omzet</field>
         <field name="engine">domain</field>
         <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'outlet')]</field>
         <field name="subformula">-sum</field>
     </record>
-    <record id="flamant_margin_line_outlet_cogs" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_outlet"/>
-        <field name="name">COGS</field>
-        <field name="code">FLM_COGS_OUT</field>
-        <field name="sequence">52</field>
-    </record>
     <record id="flamant_margin_expr_outlet_cogs" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_outlet_cogs"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_outlet"/>
+        <field name="label">cogs</field>
         <field name="engine">domain</field>
         <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'outlet')]</field>
         <field name="subformula">sum</field>
     </record>
-    <record id="flamant_margin_line_outlet_marge" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_outlet"/>
-        <field name="name">Marge</field>
-        <field name="code">FLM_MARGE_OUT</field>
-        <field name="sequence">53</field>
-    </record>
     <record id="flamant_margin_expr_outlet_marge" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_outlet_marge"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_outlet"/>
+        <field name="label">marge</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_REV_OUT.balance - FLM_COGS_OUT.balance</field>
-    </record>
-    <record id="flamant_margin_line_outlet_pct" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_outlet"/>
-        <field name="name">% Marge</field>
-        <field name="code">FLM_PCT_OUT</field>
-        <field name="sequence">54</field>
+        <field name="formula">FLM_OUT.omzet - FLM_OUT.cogs</field>
     </record>
     <record id="flamant_margin_expr_outlet_pct" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_outlet_pct"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_outlet"/>
+        <field name="label">pct</field>
         <field name="engine">aggregation</field>
-        <field name="formula">100 * FLM_MARGE_OUT.balance / FLM_REV_OUT.balance</field>
+        <field name="formula">100 * FLM_OUT.marge / FLM_OUT.omzet</field>
         <field name="subformula">ignore_zero_division</field>
-        <field name="figure_type">percentage</field>
     </record>
 
     <!-- ============ FLAMANT@HOME ============ -->
@@ -374,61 +230,32 @@
         <field name="code">FLM_HOME</field>
         <field name="sequence">60</field>
     </record>
-    <record id="flamant_margin_line_fhome_rev" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_fhome"/>
-        <field name="name">Omzet</field>
-        <field name="code">FLM_REV_HOME</field>
-        <field name="sequence">61</field>
-    </record>
-    <record id="flamant_margin_expr_fhome_rev" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_fhome_rev"/>
-        <field name="label">balance</field>
+    <record id="flamant_margin_expr_fhome_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_line_fhome"/>
+        <field name="label">omzet</field>
         <field name="engine">domain</field>
         <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'flamant_home')]</field>
         <field name="subformula">-sum</field>
     </record>
-    <record id="flamant_margin_line_fhome_cogs" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_fhome"/>
-        <field name="name">COGS</field>
-        <field name="code">FLM_COGS_HOME</field>
-        <field name="sequence">62</field>
-    </record>
     <record id="flamant_margin_expr_fhome_cogs" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_fhome_cogs"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_fhome"/>
+        <field name="label">cogs</field>
         <field name="engine">domain</field>
         <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'flamant_home')]</field>
         <field name="subformula">sum</field>
     </record>
-    <record id="flamant_margin_line_fhome_marge" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_fhome"/>
-        <field name="name">Marge</field>
-        <field name="code">FLM_MARGE_HOME</field>
-        <field name="sequence">63</field>
-    </record>
     <record id="flamant_margin_expr_fhome_marge" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_fhome_marge"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_fhome"/>
+        <field name="label">marge</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_REV_HOME.balance - FLM_COGS_HOME.balance</field>
-    </record>
-    <record id="flamant_margin_line_fhome_pct" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_fhome"/>
-        <field name="name">% Marge</field>
-        <field name="code">FLM_PCT_HOME</field>
-        <field name="sequence">64</field>
+        <field name="formula">FLM_HOME.omzet - FLM_HOME.cogs</field>
     </record>
     <record id="flamant_margin_expr_fhome_pct" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_fhome_pct"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_fhome"/>
+        <field name="label">pct</field>
         <field name="engine">aggregation</field>
-        <field name="formula">100 * FLM_MARGE_HOME.balance / FLM_REV_HOME.balance</field>
+        <field name="formula">100 * FLM_HOME.marge / FLM_HOME.omzet</field>
         <field name="subformula">ignore_zero_division</field>
-        <field name="figure_type">percentage</field>
     </record>
 
     <!-- ============ OTHER ============ -->
@@ -438,130 +265,614 @@
         <field name="code">FLM_OTHER</field>
         <field name="sequence">70</field>
     </record>
-    <record id="flamant_margin_line_other_rev" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_other"/>
-        <field name="name">Omzet</field>
-        <field name="code">FLM_REV_OTHER</field>
-        <field name="sequence">71</field>
-    </record>
-    <record id="flamant_margin_expr_other_rev" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_other_rev"/>
-        <field name="label">balance</field>
+    <record id="flamant_margin_expr_other_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_line_other"/>
+        <field name="label">omzet</field>
         <field name="engine">domain</field>
         <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'other')]</field>
         <field name="subformula">-sum</field>
     </record>
-    <record id="flamant_margin_line_other_cogs" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_other"/>
-        <field name="name">COGS</field>
-        <field name="code">FLM_COGS_OTHER</field>
-        <field name="sequence">72</field>
-    </record>
     <record id="flamant_margin_expr_other_cogs" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_other_cogs"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_other"/>
+        <field name="label">cogs</field>
         <field name="engine">domain</field>
         <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'other')]</field>
         <field name="subformula">sum</field>
     </record>
-    <record id="flamant_margin_line_other_marge" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_other"/>
-        <field name="name">Marge</field>
-        <field name="code">FLM_MARGE_OTHER</field>
-        <field name="sequence">73</field>
-    </record>
     <record id="flamant_margin_expr_other_marge" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_other_marge"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_other"/>
+        <field name="label">marge</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_REV_OTHER.balance - FLM_COGS_OTHER.balance</field>
-    </record>
-    <record id="flamant_margin_line_other_pct" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_other"/>
-        <field name="name">% Marge</field>
-        <field name="code">FLM_PCT_OTHER</field>
-        <field name="sequence">74</field>
+        <field name="formula">FLM_OTHER.omzet - FLM_OTHER.cogs</field>
     </record>
     <record id="flamant_margin_expr_other_pct" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_other_pct"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_other"/>
+        <field name="label">pct</field>
         <field name="engine">aggregation</field>
-        <field name="formula">100 * FLM_MARGE_OTHER.balance / FLM_REV_OTHER.balance</field>
+        <field name="formula">100 * FLM_OTHER.marge / FLM_OTHER.omzet</field>
         <field name="subformula">ignore_zero_division</field>
-        <field name="figure_type">percentage</field>
     </record>
 
-    <!-- ============ TOTAL ============ -->
+    <!-- ============ TOTAAL ============ -->
     <record id="flamant_margin_line_total" model="account.report.line">
         <field name="report_id" ref="flamant_margin_report"/>
         <field name="name">TOTAAL</field>
         <field name="code">FLM_TOTAL</field>
         <field name="sequence">100</field>
     </record>
-    <record id="flamant_margin_line_total_rev" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_total"/>
-        <field name="name">Omzet</field>
-        <field name="code">FLM_REV_TOTAL</field>
-        <field name="sequence">101</field>
-    </record>
-    <record id="flamant_margin_expr_total_rev" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_total_rev"/>
-        <field name="label">balance</field>
+    <record id="flamant_margin_expr_total_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_line_total"/>
+        <field name="label">omzet</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_REV_SHOPS.balance + FLM_REV_ECOM.balance + FLM_REV_WHS.balance + FLM_REV_FRAN.balance + FLM_REV_OUT.balance + FLM_REV_HOME.balance + FLM_REV_OTHER.balance</field>
-    </record>
-    <record id="flamant_margin_line_total_cogs" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_total"/>
-        <field name="name">COGS</field>
-        <field name="code">FLM_COGS_TOTAL</field>
-        <field name="sequence">102</field>
+        <field name="formula">FLM_SHOPS.omzet + FLM_ECOM.omzet + FLM_WHS.omzet + FLM_FRAN.omzet + FLM_OUT.omzet + FLM_HOME.omzet + FLM_OTHER.omzet</field>
     </record>
     <record id="flamant_margin_expr_total_cogs" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_total_cogs"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_total"/>
+        <field name="label">cogs</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_COGS_SHOPS.balance + FLM_COGS_ECOM.balance + FLM_COGS_WHS.balance + FLM_COGS_FRAN.balance + FLM_COGS_OUT.balance + FLM_COGS_HOME.balance + FLM_COGS_OTHER.balance</field>
-    </record>
-    <record id="flamant_margin_line_total_marge" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_total"/>
-        <field name="name">Marge</field>
-        <field name="code">FLM_MARGE_TOTAL</field>
-        <field name="sequence">103</field>
+        <field name="formula">FLM_SHOPS.cogs + FLM_ECOM.cogs + FLM_WHS.cogs + FLM_FRAN.cogs + FLM_OUT.cogs + FLM_HOME.cogs + FLM_OTHER.cogs</field>
     </record>
     <record id="flamant_margin_expr_total_marge" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_total_marge"/>
-        <field name="label">balance</field>
+        <field name="report_line_id" ref="flamant_margin_line_total"/>
+        <field name="label">marge</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_REV_TOTAL.balance - FLM_COGS_TOTAL.balance</field>
-    </record>
-    <record id="flamant_margin_line_total_pct" model="account.report.line">
-        <field name="report_id" ref="flamant_margin_report"/>
-        <field name="parent_id" ref="flamant_margin_line_total"/>
-        <field name="name">% Marge</field>
-        <field name="code">FLM_PCT_TOTAL</field>
-        <field name="sequence">104</field>
+        <field name="formula">FLM_TOTAL.omzet - FLM_TOTAL.cogs</field>
     </record>
     <record id="flamant_margin_expr_total_pct" model="account.report.expression">
-        <field name="report_line_id" ref="flamant_margin_line_total_pct"/>
+        <field name="report_line_id" ref="flamant_margin_line_total"/>
+        <field name="label">pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_TOTAL.marge / FLM_TOTAL.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!--
+        ================================================================
+        Marge-rapport (detail)  — vertical layout
+        ================================================================
+        Drilldown-friendly: 1 column "Bedrag", 4 sub-rows per channel
+        (Omzet / COGS / Marge / % Marge). Useful when you want detail
+        rows per channel for a single period snapshot.
+    -->
+
+    <record id="flamant_margin_report_detail" model="account.report">
+        <field name="name">Marge-rapport (detail)</field>
+        <field name="filter_date_range">True</field>
+        <field name="filter_period_comparison">True</field>
+        <field name="filter_growth_comparison">True</field>
+        <field name="filter_budgets">True</field>
+        <field name="filter_show_draft">True</field>
+        <field name="filter_unfold_all">True</field>
+        <field name="default_opening_date_filter">this_month</field>
+        <field name="column_ids">
+            <record id="flamant_margin_detail_col_balance" model="account.report.column">
+                <field name="name">Bedrag</field>
+                <field name="expression_label">balance</field>
+                <field name="figure_type">monetary</field>
+            </record>
+        </field>
+    </record>
+
+    <!-- ============ SHOPS (detail) ============ -->
+    <record id="flamant_margin_detail_line_shops" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="name">Shops</field>
+        <field name="code">FLM_D_SHOPS</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="flamant_margin_detail_line_shops_rev" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_shops"/>
+        <field name="name">Omzet</field>
+        <field name="code">FLM_D_REV_SHOPS</field>
+        <field name="sequence">11</field>
+    </record>
+    <record id="flamant_margin_detail_expr_shops_rev" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_shops_rev"/>
+        <field name="label">balance</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'shops')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_margin_detail_line_shops_cogs" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_shops"/>
+        <field name="name">COGS</field>
+        <field name="code">FLM_D_COGS_SHOPS</field>
+        <field name="sequence">12</field>
+    </record>
+    <record id="flamant_margin_detail_expr_shops_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_shops_cogs"/>
+        <field name="label">balance</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'shops')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_margin_detail_line_shops_marge" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_shops"/>
+        <field name="name">Marge</field>
+        <field name="code">FLM_D_MARGE_SHOPS</field>
+        <field name="sequence">13</field>
+    </record>
+    <record id="flamant_margin_detail_expr_shops_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_shops_marge"/>
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
-        <field name="formula">100 * FLM_MARGE_TOTAL.balance / FLM_REV_TOTAL.balance</field>
+        <field name="formula">FLM_D_REV_SHOPS.balance - FLM_D_COGS_SHOPS.balance</field>
+    </record>
+    <record id="flamant_margin_detail_line_shops_pct" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_shops"/>
+        <field name="name">% Marge</field>
+        <field name="code">FLM_D_PCT_SHOPS</field>
+        <field name="sequence">14</field>
+    </record>
+    <record id="flamant_margin_detail_expr_shops_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_shops_pct"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_D_MARGE_SHOPS.balance / FLM_D_REV_SHOPS.balance</field>
         <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
 
-    <!-- Menu item under Flamant KPI -->
+    <!-- ============ ECOMMERCE (detail) ============ -->
+    <record id="flamant_margin_detail_line_ecom" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="name">Online / E-Commerce</field>
+        <field name="code">FLM_D_ECOM</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="flamant_margin_detail_line_ecom_rev" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_ecom"/>
+        <field name="name">Omzet</field>
+        <field name="code">FLM_D_REV_ECOM</field>
+        <field name="sequence">21</field>
+    </record>
+    <record id="flamant_margin_detail_expr_ecom_rev" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_ecom_rev"/>
+        <field name="label">balance</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'ecommerce')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_margin_detail_line_ecom_cogs" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_ecom"/>
+        <field name="name">COGS</field>
+        <field name="code">FLM_D_COGS_ECOM</field>
+        <field name="sequence">22</field>
+    </record>
+    <record id="flamant_margin_detail_expr_ecom_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_ecom_cogs"/>
+        <field name="label">balance</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'ecommerce')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_margin_detail_line_ecom_marge" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_ecom"/>
+        <field name="name">Marge</field>
+        <field name="code">FLM_D_MARGE_ECOM</field>
+        <field name="sequence">23</field>
+    </record>
+    <record id="flamant_margin_detail_expr_ecom_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_ecom_marge"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_D_REV_ECOM.balance - FLM_D_COGS_ECOM.balance</field>
+    </record>
+    <record id="flamant_margin_detail_line_ecom_pct" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_ecom"/>
+        <field name="name">% Marge</field>
+        <field name="code">FLM_D_PCT_ECOM</field>
+        <field name="sequence">24</field>
+    </record>
+    <record id="flamant_margin_detail_expr_ecom_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_ecom_pct"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_D_MARGE_ECOM.balance / FLM_D_REV_ECOM.balance</field>
+        <field name="subformula">ignore_zero_division</field>
+        <field name="figure_type">percentage</field>
+    </record>
+
+    <!-- ============ WHOLESALE (detail) ============ -->
+    <record id="flamant_margin_detail_line_wholesale" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="name">Wholesale</field>
+        <field name="code">FLM_D_WHS</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="flamant_margin_detail_line_wholesale_rev" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_wholesale"/>
+        <field name="name">Omzet</field>
+        <field name="code">FLM_D_REV_WHS</field>
+        <field name="sequence">31</field>
+    </record>
+    <record id="flamant_margin_detail_expr_wholesale_rev" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_wholesale_rev"/>
+        <field name="label">balance</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'wholesale')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_margin_detail_line_wholesale_cogs" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_wholesale"/>
+        <field name="name">COGS</field>
+        <field name="code">FLM_D_COGS_WHS</field>
+        <field name="sequence">32</field>
+    </record>
+    <record id="flamant_margin_detail_expr_wholesale_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_wholesale_cogs"/>
+        <field name="label">balance</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'wholesale')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_margin_detail_line_wholesale_marge" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_wholesale"/>
+        <field name="name">Marge</field>
+        <field name="code">FLM_D_MARGE_WHS</field>
+        <field name="sequence">33</field>
+    </record>
+    <record id="flamant_margin_detail_expr_wholesale_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_wholesale_marge"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_D_REV_WHS.balance - FLM_D_COGS_WHS.balance</field>
+    </record>
+    <record id="flamant_margin_detail_line_wholesale_pct" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_wholesale"/>
+        <field name="name">% Marge</field>
+        <field name="code">FLM_D_PCT_WHS</field>
+        <field name="sequence">34</field>
+    </record>
+    <record id="flamant_margin_detail_expr_wholesale_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_wholesale_pct"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_D_MARGE_WHS.balance / FLM_D_REV_WHS.balance</field>
+        <field name="subformula">ignore_zero_division</field>
+        <field name="figure_type">percentage</field>
+    </record>
+
+    <!-- ============ FRANCHISE (detail) ============ -->
+    <record id="flamant_margin_detail_line_franchise" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="name">Franchise</field>
+        <field name="code">FLM_D_FRAN</field>
+        <field name="sequence">40</field>
+    </record>
+    <record id="flamant_margin_detail_line_franchise_rev" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_franchise"/>
+        <field name="name">Omzet</field>
+        <field name="code">FLM_D_REV_FRAN</field>
+        <field name="sequence">41</field>
+    </record>
+    <record id="flamant_margin_detail_expr_franchise_rev" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_franchise_rev"/>
+        <field name="label">balance</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'franchise')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_margin_detail_line_franchise_cogs" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_franchise"/>
+        <field name="name">COGS</field>
+        <field name="code">FLM_D_COGS_FRAN</field>
+        <field name="sequence">42</field>
+    </record>
+    <record id="flamant_margin_detail_expr_franchise_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_franchise_cogs"/>
+        <field name="label">balance</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'franchise')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_margin_detail_line_franchise_marge" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_franchise"/>
+        <field name="name">Marge</field>
+        <field name="code">FLM_D_MARGE_FRAN</field>
+        <field name="sequence">43</field>
+    </record>
+    <record id="flamant_margin_detail_expr_franchise_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_franchise_marge"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_D_REV_FRAN.balance - FLM_D_COGS_FRAN.balance</field>
+    </record>
+    <record id="flamant_margin_detail_line_franchise_pct" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_franchise"/>
+        <field name="name">% Marge</field>
+        <field name="code">FLM_D_PCT_FRAN</field>
+        <field name="sequence">44</field>
+    </record>
+    <record id="flamant_margin_detail_expr_franchise_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_franchise_pct"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_D_MARGE_FRAN.balance / FLM_D_REV_FRAN.balance</field>
+        <field name="subformula">ignore_zero_division</field>
+        <field name="figure_type">percentage</field>
+    </record>
+
+    <!-- ============ OUTLET (detail) ============ -->
+    <record id="flamant_margin_detail_line_outlet" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="name">Outlet</field>
+        <field name="code">FLM_D_OUT</field>
+        <field name="sequence">50</field>
+    </record>
+    <record id="flamant_margin_detail_line_outlet_rev" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_outlet"/>
+        <field name="name">Omzet</field>
+        <field name="code">FLM_D_REV_OUT</field>
+        <field name="sequence">51</field>
+    </record>
+    <record id="flamant_margin_detail_expr_outlet_rev" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_outlet_rev"/>
+        <field name="label">balance</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'outlet')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_margin_detail_line_outlet_cogs" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_outlet"/>
+        <field name="name">COGS</field>
+        <field name="code">FLM_D_COGS_OUT</field>
+        <field name="sequence">52</field>
+    </record>
+    <record id="flamant_margin_detail_expr_outlet_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_outlet_cogs"/>
+        <field name="label">balance</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'outlet')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_margin_detail_line_outlet_marge" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_outlet"/>
+        <field name="name">Marge</field>
+        <field name="code">FLM_D_MARGE_OUT</field>
+        <field name="sequence">53</field>
+    </record>
+    <record id="flamant_margin_detail_expr_outlet_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_outlet_marge"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_D_REV_OUT.balance - FLM_D_COGS_OUT.balance</field>
+    </record>
+    <record id="flamant_margin_detail_line_outlet_pct" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_outlet"/>
+        <field name="name">% Marge</field>
+        <field name="code">FLM_D_PCT_OUT</field>
+        <field name="sequence">54</field>
+    </record>
+    <record id="flamant_margin_detail_expr_outlet_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_outlet_pct"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_D_MARGE_OUT.balance / FLM_D_REV_OUT.balance</field>
+        <field name="subformula">ignore_zero_division</field>
+        <field name="figure_type">percentage</field>
+    </record>
+
+    <!-- ============ FLAMANT@HOME (detail) ============ -->
+    <record id="flamant_margin_detail_line_fhome" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="name">Flamant@Home</field>
+        <field name="code">FLM_D_HOME</field>
+        <field name="sequence">60</field>
+    </record>
+    <record id="flamant_margin_detail_line_fhome_rev" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_fhome"/>
+        <field name="name">Omzet</field>
+        <field name="code">FLM_D_REV_HOME</field>
+        <field name="sequence">61</field>
+    </record>
+    <record id="flamant_margin_detail_expr_fhome_rev" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_fhome_rev"/>
+        <field name="label">balance</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'flamant_home')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_margin_detail_line_fhome_cogs" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_fhome"/>
+        <field name="name">COGS</field>
+        <field name="code">FLM_D_COGS_HOME</field>
+        <field name="sequence">62</field>
+    </record>
+    <record id="flamant_margin_detail_expr_fhome_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_fhome_cogs"/>
+        <field name="label">balance</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'flamant_home')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_margin_detail_line_fhome_marge" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_fhome"/>
+        <field name="name">Marge</field>
+        <field name="code">FLM_D_MARGE_HOME</field>
+        <field name="sequence">63</field>
+    </record>
+    <record id="flamant_margin_detail_expr_fhome_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_fhome_marge"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_D_REV_HOME.balance - FLM_D_COGS_HOME.balance</field>
+    </record>
+    <record id="flamant_margin_detail_line_fhome_pct" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_fhome"/>
+        <field name="name">% Marge</field>
+        <field name="code">FLM_D_PCT_HOME</field>
+        <field name="sequence">64</field>
+    </record>
+    <record id="flamant_margin_detail_expr_fhome_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_fhome_pct"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_D_MARGE_HOME.balance / FLM_D_REV_HOME.balance</field>
+        <field name="subformula">ignore_zero_division</field>
+        <field name="figure_type">percentage</field>
+    </record>
+
+    <!-- ============ OTHER (detail) ============ -->
+    <record id="flamant_margin_detail_line_other" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="name">Other</field>
+        <field name="code">FLM_D_OTHER</field>
+        <field name="sequence">70</field>
+    </record>
+    <record id="flamant_margin_detail_line_other_rev" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_other"/>
+        <field name="name">Omzet</field>
+        <field name="code">FLM_D_REV_OTHER</field>
+        <field name="sequence">71</field>
+    </record>
+    <record id="flamant_margin_detail_expr_other_rev" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_other_rev"/>
+        <field name="label">balance</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'other')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_margin_detail_line_other_cogs" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_other"/>
+        <field name="name">COGS</field>
+        <field name="code">FLM_D_COGS_OTHER</field>
+        <field name="sequence">72</field>
+    </record>
+    <record id="flamant_margin_detail_expr_other_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_other_cogs"/>
+        <field name="label">balance</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'other')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_margin_detail_line_other_marge" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_other"/>
+        <field name="name">Marge</field>
+        <field name="code">FLM_D_MARGE_OTHER</field>
+        <field name="sequence">73</field>
+    </record>
+    <record id="flamant_margin_detail_expr_other_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_other_marge"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_D_REV_OTHER.balance - FLM_D_COGS_OTHER.balance</field>
+    </record>
+    <record id="flamant_margin_detail_line_other_pct" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_other"/>
+        <field name="name">% Marge</field>
+        <field name="code">FLM_D_PCT_OTHER</field>
+        <field name="sequence">74</field>
+    </record>
+    <record id="flamant_margin_detail_expr_other_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_other_pct"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_D_MARGE_OTHER.balance / FLM_D_REV_OTHER.balance</field>
+        <field name="subformula">ignore_zero_division</field>
+        <field name="figure_type">percentage</field>
+    </record>
+
+    <!-- ============ TOTAAL (detail) ============ -->
+    <record id="flamant_margin_detail_line_total" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="name">TOTAAL</field>
+        <field name="code">FLM_D_TOTAL</field>
+        <field name="sequence">100</field>
+    </record>
+    <record id="flamant_margin_detail_line_total_rev" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_total"/>
+        <field name="name">Omzet</field>
+        <field name="code">FLM_D_REV_TOTAL</field>
+        <field name="sequence">101</field>
+    </record>
+    <record id="flamant_margin_detail_expr_total_rev" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_total_rev"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_D_REV_SHOPS.balance + FLM_D_REV_ECOM.balance + FLM_D_REV_WHS.balance + FLM_D_REV_FRAN.balance + FLM_D_REV_OUT.balance + FLM_D_REV_HOME.balance + FLM_D_REV_OTHER.balance</field>
+    </record>
+    <record id="flamant_margin_detail_line_total_cogs" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_total"/>
+        <field name="name">COGS</field>
+        <field name="code">FLM_D_COGS_TOTAL</field>
+        <field name="sequence">102</field>
+    </record>
+    <record id="flamant_margin_detail_expr_total_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_total_cogs"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_D_COGS_SHOPS.balance + FLM_D_COGS_ECOM.balance + FLM_D_COGS_WHS.balance + FLM_D_COGS_FRAN.balance + FLM_D_COGS_OUT.balance + FLM_D_COGS_HOME.balance + FLM_D_COGS_OTHER.balance</field>
+    </record>
+    <record id="flamant_margin_detail_line_total_marge" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_total"/>
+        <field name="name">Marge</field>
+        <field name="code">FLM_D_MARGE_TOTAL</field>
+        <field name="sequence">103</field>
+    </record>
+    <record id="flamant_margin_detail_expr_total_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_total_marge"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_D_REV_TOTAL.balance - FLM_D_COGS_TOTAL.balance</field>
+    </record>
+    <record id="flamant_margin_detail_line_total_pct" model="account.report.line">
+        <field name="report_id" ref="flamant_margin_report_detail"/>
+        <field name="parent_id" ref="flamant_margin_detail_line_total"/>
+        <field name="name">% Marge</field>
+        <field name="code">FLM_D_PCT_TOTAL</field>
+        <field name="sequence">104</field>
+    </record>
+    <record id="flamant_margin_detail_expr_total_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_margin_detail_line_total_pct"/>
+        <field name="label">balance</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_D_MARGE_TOTAL.balance / FLM_D_REV_TOTAL.balance</field>
+        <field name="subformula">ignore_zero_division</field>
+        <field name="figure_type">percentage</field>
+    </record>
+
+    <!-- Menu items -->
     <record id="flamant_margin_report_action" model="ir.actions.client">
         <field name="name">Marge-rapport</field>
         <field name="tag">account_report</field>
         <field name="context" eval="{'report_id': ref('flamant_margin_report')}"/>
+    </record>
+    <record id="flamant_margin_report_detail_action" model="ir.actions.client">
+        <field name="name">Marge-rapport (detail)</field>
+        <field name="tag">account_report</field>
+        <field name="context" eval="{'report_id': ref('flamant_margin_report_detail')}"/>
     </record>
 
     <menuitem id="menu_flamant_margin_report"
@@ -569,4 +880,10 @@
               parent="menu_flamant_sales_root"
               action="flamant_margin_report_action"
               sequence="40"/>
+
+    <menuitem id="menu_flamant_margin_report_detail"
+              name="Marge-rapport (detail)"
+              parent="menu_flamant_sales_root"
+              action="flamant_margin_report_detail_action"
+              sequence="41"/>
 </odoo>
