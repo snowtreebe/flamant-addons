@@ -44,6 +44,7 @@ future budget reporting (menus hidden pending budget v2).
         'views/flamant_monthly_budget_views.xml',
         'views/menus.xml',
         'data/flamant_margin_report.xml',
+        'data/flamant_business_unit_report.xml',
     ],
     'assets': {},
     'post_init_hook': 'post_init_hook',
