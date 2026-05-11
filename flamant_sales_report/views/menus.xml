@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <menuitem id="menu_flamant_sales_root"
-              name="Flamant Sales"
+              name="Flamant KPI"
               sequence="25"
               web_icon="flamant_sales_report,static/description/icon.png"/>
 
-    <menuitem id="menu_flamant_daily_sales"
-              name="Daily Sales"
+    <menuitem id="menu_flamant_quotation"
+              name="Quotations"
               parent="menu_flamant_sales_root"
-              action="action_flamant_daily_sales"
+              action="action_flamant_quotation"
               sequence="10"/>
 
-    <menuitem id="menu_flamant_shop_budget"
-              name="Budget (legacy)"
+    <menuitem id="menu_flamant_daily_sales_intake"
+              name="Order Intake"
               parent="menu_flamant_sales_root"
-              action="action_flamant_shop_budget"
-              sequence="30"/>
-
-    <menuitem id="menu_flamant_monthly_budget"
-              name="Monthly Budget"
-              parent="menu_flamant_sales_root"
-              action="action_flamant_monthly_budget"
+              action="action_flamant_daily_sales_intake"
               sequence="20"/>
+
+    <menuitem id="menu_flamant_daily_sales_invoiced"
+              name="Invoiced Sales"
+              parent="menu_flamant_sales_root"
+              action="action_flamant_daily_sales_invoiced"
+              sequence="30"/>
 </odoo>
