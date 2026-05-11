@@ -1,20 +1,23 @@
 {
     'name': 'Flamant KPI',
-    'version': '18.0.4.0.0',
+    'version': '18.0.5.0.0',
     'category': 'Sales/Sales',
-    'summary': 'Consolidated POS + Sales KPI dashboard with channel / country / shop drilldown',
+    'summary': 'Consolidated POS + Sales KPI dashboard with channel / country / shop drilldown and margin reporting',
     'description': """
 Flamant KPI
 ===========
 Consolidates pos.order, sale.order, and customer invoices into a single
-read-only SQL view (flamant.daily.sales) with two dedicated menu entries:
+read-only SQL view (flamant.daily.sales) with three dedicated menu entries:
 
 - **Invoiced Sales** — all rows with basis = invoiced
 - **Order Intake**  — all rows with basis = order_intake
 - **Quotations**    — open and cancelled sale.order records (draft, sent, cancel)
+- **Marge-rapport** — native account.report breaking down revenue (70%) and
+  COGS (604%) per sales channel with margin, %margin, budget comparison,
+  and period / year comparisons.
 
-Each row carries a clickable Document link back to the originating POS
-order, sales order, or invoice (source_ref + source_doc Reference field).
+Each operational row carries a clickable Document link back to the
+originating POS order, sales order, or invoice.
 
 Dimensions available per row: date, channel, country, shop label, source.
 
@@ -30,6 +33,7 @@ future budget reporting (menus hidden pending budget v2).
         'point_of_sale',
         'sale_management',
         'account_budget',
+        'account_reports',
     ],
     'data': [
         'security/ir.model.access.csv',
@@ -39,6 +43,7 @@ future budget reporting (menus hidden pending budget v2).
         'views/flamant_shop_budget_views.xml',
         'views/flamant_monthly_budget_views.xml',
         'views/menus.xml',
+        'data/flamant_margin_report.xml',
     ],
     'assets': {},
     'post_init_hook': 'post_init_hook',
