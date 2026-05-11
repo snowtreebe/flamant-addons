@@ -59,7 +59,7 @@
         <field name="parent_id" ref="flamant_margin_line_shops"/>
         <field name="name">Omzet</field>
         <field name="code">FLM_REV_SHOPS</field>
-        <field name="sequence">1</field>
+        <field name="sequence">11</field>
     </record>
     <record id="flamant_margin_expr_shops_rev" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_shops_rev"/>
@@ -73,7 +73,7 @@
         <field name="parent_id" ref="flamant_margin_line_shops"/>
         <field name="name">COGS</field>
         <field name="code">FLM_COGS_SHOPS</field>
-        <field name="sequence">2</field>
+        <field name="sequence">12</field>
     </record>
     <record id="flamant_margin_expr_shops_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_shops_cogs"/>
@@ -87,7 +87,7 @@
         <field name="parent_id" ref="flamant_margin_line_shops"/>
         <field name="name">Marge</field>
         <field name="code">FLM_MARGE_SHOPS</field>
-        <field name="sequence">3</field>
+        <field name="sequence">13</field>
     </record>
     <record id="flamant_margin_expr_shops_marge" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_shops_marge"/>
@@ -100,13 +100,13 @@
         <field name="parent_id" ref="flamant_margin_line_shops"/>
         <field name="name">% Marge</field>
         <field name="code">FLM_PCT_SHOPS</field>
-        <field name="sequence">4</field>
+        <field name="sequence">14</field>
     </record>
     <record id="flamant_margin_expr_shops_pct" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_shops_pct"/>
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_MARGE_SHOPS.balance / FLM_REV_SHOPS.balance</field>
+        <field name="formula">100 * FLM_MARGE_SHOPS.balance / FLM_REV_SHOPS.balance</field>
         <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
@@ -123,7 +123,7 @@
         <field name="parent_id" ref="flamant_margin_line_ecom"/>
         <field name="name">Omzet</field>
         <field name="code">FLM_REV_ECOM</field>
-        <field name="sequence">1</field>
+        <field name="sequence">21</field>
     </record>
     <record id="flamant_margin_expr_ecom_rev" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_ecom_rev"/>
@@ -137,7 +137,7 @@
         <field name="parent_id" ref="flamant_margin_line_ecom"/>
         <field name="name">COGS</field>
         <field name="code">FLM_COGS_ECOM</field>
-        <field name="sequence">2</field>
+        <field name="sequence">22</field>
     </record>
     <record id="flamant_margin_expr_ecom_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_ecom_cogs"/>
@@ -151,7 +151,7 @@
         <field name="parent_id" ref="flamant_margin_line_ecom"/>
         <field name="name">Marge</field>
         <field name="code">FLM_MARGE_ECOM</field>
-        <field name="sequence">3</field>
+        <field name="sequence">23</field>
     </record>
     <record id="flamant_margin_expr_ecom_marge" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_ecom_marge"/>
@@ -164,13 +164,13 @@
         <field name="parent_id" ref="flamant_margin_line_ecom"/>
         <field name="name">% Marge</field>
         <field name="code">FLM_PCT_ECOM</field>
-        <field name="sequence">4</field>
+        <field name="sequence">24</field>
     </record>
     <record id="flamant_margin_expr_ecom_pct" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_ecom_pct"/>
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_MARGE_ECOM.balance / FLM_REV_ECOM.balance</field>
+        <field name="formula">100 * FLM_MARGE_ECOM.balance / FLM_REV_ECOM.balance</field>
         <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
@@ -187,7 +187,7 @@
         <field name="parent_id" ref="flamant_margin_line_wholesale"/>
         <field name="name">Omzet</field>
         <field name="code">FLM_REV_WHS</field>
-        <field name="sequence">1</field>
+        <field name="sequence">31</field>
     </record>
     <record id="flamant_margin_expr_wholesale_rev" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_wholesale_rev"/>
@@ -201,7 +201,7 @@
         <field name="parent_id" ref="flamant_margin_line_wholesale"/>
         <field name="name">COGS</field>
         <field name="code">FLM_COGS_WHS</field>
-        <field name="sequence">2</field>
+        <field name="sequence">32</field>
     </record>
     <record id="flamant_margin_expr_wholesale_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_wholesale_cogs"/>
@@ -215,7 +215,7 @@
         <field name="parent_id" ref="flamant_margin_line_wholesale"/>
         <field name="name">Marge</field>
         <field name="code">FLM_MARGE_WHS</field>
-        <field name="sequence">3</field>
+        <field name="sequence">33</field>
     </record>
     <record id="flamant_margin_expr_wholesale_marge" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_wholesale_marge"/>
@@ -228,13 +228,13 @@
         <field name="parent_id" ref="flamant_margin_line_wholesale"/>
         <field name="name">% Marge</field>
         <field name="code">FLM_PCT_WHS</field>
-        <field name="sequence">4</field>
+        <field name="sequence">34</field>
     </record>
     <record id="flamant_margin_expr_wholesale_pct" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_wholesale_pct"/>
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_MARGE_WHS.balance / FLM_REV_WHS.balance</field>
+        <field name="formula">100 * FLM_MARGE_WHS.balance / FLM_REV_WHS.balance</field>
         <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
@@ -251,7 +251,7 @@
         <field name="parent_id" ref="flamant_margin_line_franchise"/>
         <field name="name">Omzet</field>
         <field name="code">FLM_REV_FRAN</field>
-        <field name="sequence">1</field>
+        <field name="sequence">41</field>
     </record>
     <record id="flamant_margin_expr_franchise_rev" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_franchise_rev"/>
@@ -265,7 +265,7 @@
         <field name="parent_id" ref="flamant_margin_line_franchise"/>
         <field name="name">COGS</field>
         <field name="code">FLM_COGS_FRAN</field>
-        <field name="sequence">2</field>
+        <field name="sequence">42</field>
     </record>
     <record id="flamant_margin_expr_franchise_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_franchise_cogs"/>
@@ -279,7 +279,7 @@
         <field name="parent_id" ref="flamant_margin_line_franchise"/>
         <field name="name">Marge</field>
         <field name="code">FLM_MARGE_FRAN</field>
-        <field name="sequence">3</field>
+        <field name="sequence">43</field>
     </record>
     <record id="flamant_margin_expr_franchise_marge" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_franchise_marge"/>
@@ -292,13 +292,13 @@
         <field name="parent_id" ref="flamant_margin_line_franchise"/>
         <field name="name">% Marge</field>
         <field name="code">FLM_PCT_FRAN</field>
-        <field name="sequence">4</field>
+        <field name="sequence">44</field>
     </record>
     <record id="flamant_margin_expr_franchise_pct" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_franchise_pct"/>
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_MARGE_FRAN.balance / FLM_REV_FRAN.balance</field>
+        <field name="formula">100 * FLM_MARGE_FRAN.balance / FLM_REV_FRAN.balance</field>
         <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
@@ -315,7 +315,7 @@
         <field name="parent_id" ref="flamant_margin_line_outlet"/>
         <field name="name">Omzet</field>
         <field name="code">FLM_REV_OUT</field>
-        <field name="sequence">1</field>
+        <field name="sequence">51</field>
     </record>
     <record id="flamant_margin_expr_outlet_rev" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_outlet_rev"/>
@@ -329,7 +329,7 @@
         <field name="parent_id" ref="flamant_margin_line_outlet"/>
         <field name="name">COGS</field>
         <field name="code">FLM_COGS_OUT</field>
-        <field name="sequence">2</field>
+        <field name="sequence">52</field>
     </record>
     <record id="flamant_margin_expr_outlet_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_outlet_cogs"/>
@@ -343,7 +343,7 @@
         <field name="parent_id" ref="flamant_margin_line_outlet"/>
         <field name="name">Marge</field>
         <field name="code">FLM_MARGE_OUT</field>
-        <field name="sequence">3</field>
+        <field name="sequence">53</field>
     </record>
     <record id="flamant_margin_expr_outlet_marge" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_outlet_marge"/>
@@ -356,13 +356,13 @@
         <field name="parent_id" ref="flamant_margin_line_outlet"/>
         <field name="name">% Marge</field>
         <field name="code">FLM_PCT_OUT</field>
-        <field name="sequence">4</field>
+        <field name="sequence">54</field>
     </record>
     <record id="flamant_margin_expr_outlet_pct" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_outlet_pct"/>
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_MARGE_OUT.balance / FLM_REV_OUT.balance</field>
+        <field name="formula">100 * FLM_MARGE_OUT.balance / FLM_REV_OUT.balance</field>
         <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
@@ -379,7 +379,7 @@
         <field name="parent_id" ref="flamant_margin_line_fhome"/>
         <field name="name">Omzet</field>
         <field name="code">FLM_REV_HOME</field>
-        <field name="sequence">1</field>
+        <field name="sequence">61</field>
     </record>
     <record id="flamant_margin_expr_fhome_rev" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_fhome_rev"/>
@@ -393,7 +393,7 @@
         <field name="parent_id" ref="flamant_margin_line_fhome"/>
         <field name="name">COGS</field>
         <field name="code">FLM_COGS_HOME</field>
-        <field name="sequence">2</field>
+        <field name="sequence">62</field>
     </record>
     <record id="flamant_margin_expr_fhome_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_fhome_cogs"/>
@@ -407,7 +407,7 @@
         <field name="parent_id" ref="flamant_margin_line_fhome"/>
         <field name="name">Marge</field>
         <field name="code">FLM_MARGE_HOME</field>
-        <field name="sequence">3</field>
+        <field name="sequence">63</field>
     </record>
     <record id="flamant_margin_expr_fhome_marge" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_fhome_marge"/>
@@ -420,13 +420,13 @@
         <field name="parent_id" ref="flamant_margin_line_fhome"/>
         <field name="name">% Marge</field>
         <field name="code">FLM_PCT_HOME</field>
-        <field name="sequence">4</field>
+        <field name="sequence">64</field>
     </record>
     <record id="flamant_margin_expr_fhome_pct" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_fhome_pct"/>
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_MARGE_HOME.balance / FLM_REV_HOME.balance</field>
+        <field name="formula">100 * FLM_MARGE_HOME.balance / FLM_REV_HOME.balance</field>
         <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
@@ -443,7 +443,7 @@
         <field name="parent_id" ref="flamant_margin_line_other"/>
         <field name="name">Omzet</field>
         <field name="code">FLM_REV_OTHER</field>
-        <field name="sequence">1</field>
+        <field name="sequence">71</field>
     </record>
     <record id="flamant_margin_expr_other_rev" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_other_rev"/>
@@ -457,7 +457,7 @@
         <field name="parent_id" ref="flamant_margin_line_other"/>
         <field name="name">COGS</field>
         <field name="code">FLM_COGS_OTHER</field>
-        <field name="sequence">2</field>
+        <field name="sequence">72</field>
     </record>
     <record id="flamant_margin_expr_other_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_other_cogs"/>
@@ -471,7 +471,7 @@
         <field name="parent_id" ref="flamant_margin_line_other"/>
         <field name="name">Marge</field>
         <field name="code">FLM_MARGE_OTHER</field>
-        <field name="sequence">3</field>
+        <field name="sequence">73</field>
     </record>
     <record id="flamant_margin_expr_other_marge" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_other_marge"/>
@@ -484,13 +484,13 @@
         <field name="parent_id" ref="flamant_margin_line_other"/>
         <field name="name">% Marge</field>
         <field name="code">FLM_PCT_OTHER</field>
-        <field name="sequence">4</field>
+        <field name="sequence">74</field>
     </record>
     <record id="flamant_margin_expr_other_pct" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_other_pct"/>
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_MARGE_OTHER.balance / FLM_REV_OTHER.balance</field>
+        <field name="formula">100 * FLM_MARGE_OTHER.balance / FLM_REV_OTHER.balance</field>
         <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
@@ -507,7 +507,7 @@
         <field name="parent_id" ref="flamant_margin_line_total"/>
         <field name="name">Omzet</field>
         <field name="code">FLM_REV_TOTAL</field>
-        <field name="sequence">1</field>
+        <field name="sequence">101</field>
     </record>
     <record id="flamant_margin_expr_total_rev" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_total_rev"/>
@@ -520,7 +520,7 @@
         <field name="parent_id" ref="flamant_margin_line_total"/>
         <field name="name">COGS</field>
         <field name="code">FLM_COGS_TOTAL</field>
-        <field name="sequence">2</field>
+        <field name="sequence">102</field>
     </record>
     <record id="flamant_margin_expr_total_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_total_cogs"/>
@@ -533,7 +533,7 @@
         <field name="parent_id" ref="flamant_margin_line_total"/>
         <field name="name">Marge</field>
         <field name="code">FLM_MARGE_TOTAL</field>
-        <field name="sequence">3</field>
+        <field name="sequence">103</field>
     </record>
     <record id="flamant_margin_expr_total_marge" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_total_marge"/>
@@ -546,13 +546,13 @@
         <field name="parent_id" ref="flamant_margin_line_total"/>
         <field name="name">% Marge</field>
         <field name="code">FLM_PCT_TOTAL</field>
-        <field name="sequence">4</field>
+        <field name="sequence">104</field>
     </record>
     <record id="flamant_margin_expr_total_pct" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_total_pct"/>
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
-        <field name="formula">FLM_MARGE_TOTAL.balance / FLM_REV_TOTAL.balance</field>
+        <field name="formula">100 * FLM_MARGE_TOTAL.balance / FLM_REV_TOTAL.balance</field>
         <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
