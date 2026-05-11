@@ -94,7 +94,19 @@ class FlamantDailySales(models.Model):
                     d.basis,
                     d.team_id,
                     t.x_channel        AS channel,
-                    t.x_country_code   AS country_code,
+                    -- For ecommerce, country comes from the customer (shipping
+                    -- address). For all other channels, it stays the team's
+                    -- shop country.
+                    CASE
+                        WHEN t.x_channel = 'ecommerce' THEN
+                            CASE
+                                WHEN pc.code = 'BE' THEN 'BE'
+                                WHEN pc.code = 'FR' THEN 'FR'
+                                WHEN pc.code IS NOT NULL THEN 'INT'
+                                ELSE 'OTHER'
+                            END
+                        ELSE t.x_country_code
+                    END                AS country_code,
                     COALESCE(NULLIF(t.x_shop_label, ''), t.name->>'en_US') AS shop_label,
                     COALESCE(NULLIF(t.x_shop_cluster, ''), t.x_shop_label, t.name->>'en_US') AS shop_cluster,
                     t.x_comp_status    AS comp_status,
@@ -110,7 +122,8 @@ class FlamantDailySales(models.Model):
                         po.crm_team_id                     AS team_id,
                         'pos'::varchar                     AS source,
                         (po.amount_total - po.amount_tax)  AS amount_untaxed,
-                        po.company_id                      AS company_id
+                        po.company_id                      AS company_id,
+                        po.partner_id                      AS partner_id
                     FROM pos_order po
                     WHERE po.state NOT IN ('cancel', 'draft')
                       AND po.crm_team_id IS NOT NULL
@@ -124,7 +137,8 @@ class FlamantDailySales(models.Model):
                         po.crm_team_id,
                         'pos'::varchar,
                         (po.amount_total - po.amount_tax),
-                        po.company_id
+                        po.company_id,
+                        po.partner_id
                     FROM pos_order po
                     WHERE po.state NOT IN ('cancel', 'draft')
                       AND po.crm_team_id IS NOT NULL
@@ -138,7 +152,8 @@ class FlamantDailySales(models.Model):
                         so.team_id,
                         'sale'::varchar,
                         so.amount_untaxed,
-                        so.company_id
+                        so.company_id,
+                        so.partner_shipping_id
                     FROM sale_order so
                     WHERE so.state IN ('sale', 'done')
                       AND so.team_id IS NOT NULL
@@ -155,7 +170,8 @@ class FlamantDailySales(models.Model):
                             WHEN am.move_type = 'out_refund' THEN -am.amount_untaxed
                             ELSE am.amount_untaxed
                         END,
-                        am.company_id
+                        am.company_id,
+                        am.partner_shipping_id
                     FROM account_move am
                     WHERE am.state = 'posted'
                       AND am.move_type IN ('out_invoice', 'out_refund')
@@ -164,6 +180,8 @@ class FlamantDailySales(models.Model):
                 ) d
                 LEFT JOIN crm_team    t  ON t.id  = d.team_id
                 LEFT JOIN res_company rc ON rc.id = d.company_id
+                LEFT JOIN res_partner p  ON p.id  = d.partner_id
+                LEFT JOIN res_country pc ON pc.id = p.country_id
             )
             """
         )
