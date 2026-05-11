@@ -107,6 +107,7 @@
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
         <field name="formula">FLM_MARGE_SHOPS.balance / FLM_REV_SHOPS.balance</field>
+        <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
 
@@ -170,6 +171,7 @@
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
         <field name="formula">FLM_MARGE_ECOM.balance / FLM_REV_ECOM.balance</field>
+        <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
 
@@ -233,6 +235,7 @@
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
         <field name="formula">FLM_MARGE_WHS.balance / FLM_REV_WHS.balance</field>
+        <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
 
@@ -296,6 +299,7 @@
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
         <field name="formula">FLM_MARGE_FRAN.balance / FLM_REV_FRAN.balance</field>
+        <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
 
@@ -359,6 +363,7 @@
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
         <field name="formula">FLM_MARGE_OUT.balance / FLM_REV_OUT.balance</field>
+        <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
 
@@ -422,6 +427,7 @@
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
         <field name="formula">FLM_MARGE_HOME.balance / FLM_REV_HOME.balance</field>
+        <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
 
@@ -485,6 +491,7 @@
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
         <field name="formula">FLM_MARGE_OTHER.balance / FLM_REV_OTHER.balance</field>
+        <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
 
@@ -546,6 +553,7 @@
         <field name="label">balance</field>
         <field name="engine">aggregation</field>
         <field name="formula">FLM_MARGE_TOTAL.balance / FLM_REV_TOTAL.balance</field>
+        <field name="subformula">ignore_zero_division</field>
         <field name="figure_type">percentage</field>
     </record>
 
