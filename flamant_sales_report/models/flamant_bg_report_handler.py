@@ -4,18 +4,265 @@ from odoo import models
 class FlamantBgReportHandler(models.AbstractModel):
     """Handler for the GROUPED variant of the BU report.
 
-    Inherits the leaf-budget engine from the flat handler and adds an
-    extra "Actuals | Budgets" supercolumn header via the native
-    `custom_columns_subheaders` mechanism on `account.report`.
+    Inherits the leaf-budget engine from the flat handler and adds:
+      - "Actuals | Budgets" supercolumn header
+      - per-shop drilldown under Retail / Belgium and Retail / France
+      - per-country drilldown under Ecommerce / International
+      - Discount columns (uses Flamant Discount account tag)
     """
 
     _name = 'flamant.bg.report.handler'
     _inherit = 'flamant.bu.report.handler'
     _description = 'Flamant BU Report Custom Handler (Grouped Header)'
 
+    _DRILLDOWN_FUNCTIONS = {
+        'FLM_BU_RETAIL_BE': '_report_expand_unfoldable_line_flamant_bu_retail_shops',
+        'FLM_BU_RETAIL_FR': '_report_expand_unfoldable_line_flamant_bu_retail_shops',
+        'FLM_BU_ECOM_INT':  '_report_expand_unfoldable_line_flamant_bu_ecom_intl_countries',
+    }
+
     def _custom_options_initializer(self, report, options, previous_options=None):
         super()._custom_options_initializer(report, options, previous_options=previous_options)
         options['custom_columns_subheaders'] = [
-            {'name': 'Actuals', 'colspan': 4},
+            {'name': 'Actuals', 'colspan': 6},
             {'name': 'Budgets', 'colspan': 6},
         ]
+        options['ignore_totals_below_sections'] = True
+
+    # ----- helpers ----- #
+
+    def _flamant_drilldown_values(self, omzet, cogs, discount):
+        marge = omzet - cogs
+        pct = (100.0 * marge / omzet) if omzet else 0.0
+        gross = omzet + discount
+        discount_pct = (100.0 * discount / gross) if gross else 0.0
+        return {
+            'omzet': omzet,
+            'discount_eur': discount,
+            'discount_pct': discount_pct,
+            'cogs': cogs,
+            'marge': marge,
+            'pct': pct,
+            'locked_budget': 0.0,
+            'delta_locked_eur': omzet,
+            'delta_locked_pct': 0.0,
+            'estimated_budget': 0.0,
+            'delta_estimated_eur': omzet,
+            'delta_estimated_pct': 0.0,
+        }
+
+    def _flamant_drilldown_columns(self, report, options, values):
+        return [
+            report._build_column_dict(values.get(col.get('expression_label'), 0.0), col, options=options)
+            for col in options['columns']
+        ]
+
+    def _flamant_tag_account_ids(self, tag_name):
+        return self.env['account.account'].sudo().search(
+            [('tag_ids.name', '=', tag_name)]
+        ).ids
+
+    # ----- postprocess ----- #
+
+    def _custom_line_postprocessor(self, report, options, lines):
+        lines = super()._custom_line_postprocessor(report, options, lines)
+        for line in lines:
+            try:
+                model, line_id = report._get_model_info_from_id(line['id'])
+            except Exception:
+                continue
+            if model != 'account.report.line':
+                continue
+            rline = self.env['account.report.line'].browse(line_id)
+            fn = self._DRILLDOWN_FUNCTIONS.get(rline.code)
+            if fn:
+                line['unfoldable'] = True
+                line['expand_function'] = fn
+        return lines
+
+    # ----- retail shops drilldown ----- #
+
+    def _report_expand_unfoldable_line_flamant_bu_retail_shops(
+        self, line_dict_id, groupby, options, progress, offset,
+        unfold_all_batch_data=None,
+    ):
+        report = self.env['account.report'].browse(options['report_id'])
+        empty = {'lines': [], 'offset_increment': 0, 'has_more': False, 'progress': progress or {}}
+
+        try:
+            model, line_id = report._get_model_info_from_id(line_dict_id)
+        except Exception:
+            return empty
+        if model != 'account.report.line':
+            return empty
+
+        parent_line = self.env['account.report.line'].browse(line_id)
+        country = 'BE' if parent_line.code == 'FLM_BU_RETAIL_BE' else 'FR'
+
+        teams = self.env['crm.team'].search([
+            ('x_channel', '=', 'shops'),
+            ('x_country_code', '=', country),
+        ], order='name')
+        if not teams:
+            return empty
+
+        date_from = options['date']['date_from']
+        date_to = options['date']['date_to']
+        omzet_acc_ids = self._flamant_tag_account_ids('Flamant Omzet')
+        cogs_acc_ids = self._flamant_tag_account_ids('Flamant COGS')
+        disc_acc_ids = self._flamant_tag_account_ids('Flamant Discount')
+
+        Aml = self.env['account.move.line'].sudo()
+        base = [
+            ('team_id', 'in', teams.ids),
+            ('date', '>=', date_from),
+            ('date', '<=', date_to),
+            ('parent_state', '=', 'posted'),
+        ]
+
+        def _sum_by_team(account_ids, negate=False):
+            if not account_ids:
+                return {}
+            groups = Aml._read_group(
+                base + [('account_id', 'in', account_ids)],
+                groupby=['team_id'], aggregates=['balance:sum'],
+            )
+            sign = -1 if negate else 1
+            return {team.id: sign * bal for team, bal in groups}
+
+        omzet_by_team = _sum_by_team(omzet_acc_ids, negate=True)
+        cogs_by_team = _sum_by_team(cogs_acc_ids, negate=False)
+        disc_by_team = _sum_by_team(disc_acc_ids, negate=False)
+
+        child_level = (parent_line.hierarchy_level or 1) + 1
+        lines = []
+        for team in teams:
+            omzet = omzet_by_team.get(team.id, 0.0)
+            cogs = cogs_by_team.get(team.id, 0.0)
+            discount = disc_by_team.get(team.id, 0.0)
+            values = self._flamant_drilldown_values(omzet, cogs, discount)
+            columns = self._flamant_drilldown_columns(report, options, values)
+
+            team_label = team.x_shop_label or team.name
+            if isinstance(team_label, dict):
+                team_label = team_label.get('en_US') or next(iter(team_label.values()), '')
+
+            lines.append({
+                'id': report._get_generic_line_id('crm.team', team.id, parent_line_id=line_dict_id),
+                'name': team_label or f'Team #{team.id}',
+                'columns': columns,
+                'level': child_level,
+                'parent_id': line_dict_id,
+                'unfoldable': False,
+                'unfolded': False,
+                'caret_options': None,
+            })
+
+        return {
+            'lines': lines,
+            'offset_increment': len(lines),
+            'has_more': False,
+            'progress': progress or {},
+        }
+
+    # ----- ecommerce international drilldown ----- #
+
+    def _report_expand_unfoldable_line_flamant_bu_ecom_intl_countries(
+        self, line_dict_id, groupby, options, progress, offset,
+        unfold_all_batch_data=None,
+    ):
+        report = self.env['account.report'].browse(options['report_id'])
+        empty = {'lines': [], 'offset_increment': 0, 'has_more': False, 'progress': progress or {}}
+
+        try:
+            model, line_id = report._get_model_info_from_id(line_dict_id)
+        except Exception:
+            return empty
+        if model != 'account.report.line':
+            return empty
+        parent_line = self.env['account.report.line'].browse(line_id)
+        if parent_line.code != 'FLM_BU_ECOM_INT':
+            return empty
+
+        date_from = options['date']['date_from']
+        date_to = options['date']['date_to']
+
+        omzet_acc_ids = self._flamant_tag_account_ids('Flamant Omzet')
+        cogs_acc_ids = self._flamant_tag_account_ids('Flamant COGS')
+        disc_acc_ids = self._flamant_tag_account_ids('Flamant Discount')
+
+        tag_to_accs = {
+            'omzet': tuple(omzet_acc_ids),
+            'cogs': tuple(cogs_acc_ids),
+            'discount': tuple(disc_acc_ids),
+        }
+        # Pre-build the IN clauses as parameters; psycopg expects sequences
+        # to be tuples. Empty tuple is invalid in SQL, so we skip in code.
+
+        all_acc_ids = tuple(set(omzet_acc_ids + cogs_acc_ids + disc_acc_ids))
+        if not all_acc_ids:
+            return empty
+
+        self.env.cr.execute(
+            """
+            SELECT
+                c.id AS country_id,
+                SUM(CASE WHEN aml.account_id = ANY(%s) THEN -aml.balance ELSE 0 END) AS omzet,
+                SUM(CASE WHEN aml.account_id = ANY(%s) THEN  aml.balance ELSE 0 END) AS cogs,
+                SUM(CASE WHEN aml.account_id = ANY(%s) THEN  aml.balance ELSE 0 END) AS discount
+            FROM account_move_line aml
+            JOIN account_move      am   ON am.id   = aml.move_id
+            JOIN crm_team          t    ON t.id    = am.team_id
+            LEFT JOIN res_partner  ship ON ship.id = am.partner_shipping_id
+            LEFT JOIN res_country  c    ON c.id    = ship.country_id
+            WHERE t.x_channel = 'ecommerce'
+              AND aml.account_id = ANY(%s)
+              AND COALESCE(c.code, 'XX') NOT IN ('BE', 'FR')
+              AND aml.date BETWEEN %s AND %s
+              AND aml.parent_state = 'posted'
+            GROUP BY c.id
+            """,
+            (list(omzet_acc_ids), list(cogs_acc_ids), list(disc_acc_ids),
+             list(all_acc_ids), date_from, date_to),
+        )
+        rows = self.env.cr.fetchall()
+        rows.sort(key=lambda r: -(float(r[1] or 0.0)))
+
+        Country = self.env['res.country']
+        child_level = (parent_line.hierarchy_level or 1) + 1
+        lines = []
+        for country_id, omzet, cogs, discount in rows:
+            omzet = float(omzet or 0.0)
+            cogs = float(cogs or 0.0)
+            discount = float(discount or 0.0)
+            if omzet == 0 and cogs == 0 and discount == 0:
+                continue
+            country = Country.browse(country_id) if country_id else Country
+            name = (country.name if country else None) or '(Onbekend land)'
+
+            values = self._flamant_drilldown_values(omzet, cogs, discount)
+            columns = self._flamant_drilldown_columns(report, options, values)
+
+            line_id_str = (
+                report._get_generic_line_id('res.country', country.id, parent_line_id=line_dict_id)
+                if country
+                else report._get_generic_line_id('res.country', None, markup='unknown', parent_line_id=line_dict_id)
+            )
+
+            lines.append({
+                'id': line_id_str,
+                'name': name,
+                'columns': columns,
+                'level': child_level,
+                'parent_id': line_dict_id,
+                'unfoldable': False,
+                'unfolded': False,
+                'caret_options': None,
+            })
+
+        return {
+            'lines': lines,
+            'offset_increment': len(lines),
+            'has_more': False,
+            'progress': progress or {},
+        }

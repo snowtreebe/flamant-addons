@@ -106,8 +106,9 @@ TEAM_DEFAULTS = [
 
 
 def post_init_hook(env):
-    """Auto-map sales teams on install and on module upgrade."""
+    """Auto-map sales teams and backfill account tags on install."""
     _flamant_remap(env)
+    _flamant_tag_accounts(env)
 
 
 def _flamant_remap(env):
@@ -144,3 +145,44 @@ def _flamant_remap(env):
             })
             updated += 1
     _logger.info('flamant_sales_report: auto-mapped %s sales teams', updated)
+
+
+# ---------------------------------------------------------------------------
+# Account tagging: backfill the Flamant Omzet / COGS / Discount tags on
+# accounts that historically were classified by code pattern (70% / 604% /
+# 708-709%). Once tagged, end users manage scope via Accounting ->
+# Configuration -> Account Tags or the Account form's Tags field.
+# ---------------------------------------------------------------------------
+
+ACCOUNT_TAG_RULES = [
+    # (tag_xmlid_suffix, list of code prefixes)
+    ('tag_flamant_discount', ('708', '709')),
+    ('tag_flamant_omzet',    ('70',)),   # caught AFTER discount so 708/709 stay tagged for both
+    ('tag_flamant_cogs',     ('604',)),
+]
+
+
+def _flamant_tag_accounts(env):
+    """Tag accounts matching the seed code prefixes with the Flamant
+    Omzet / COGS / Discount tags. Idempotent: re-running adds nothing
+    new."""
+    by_tag = {}
+    for suffix, prefixes in ACCOUNT_TAG_RULES:
+        tag = env.ref(f'flamant_sales_report.{suffix}', raise_if_not_found=False)
+        if not tag:
+            _logger.warning('flamant_sales_report: tag %s not found, skipping', suffix)
+            continue
+        domain = ['|'] * (len(prefixes) - 1) + [
+            ('code', '=like', f'{prefix}%') for prefix in prefixes
+        ]
+        accounts = env['account.account'].search(domain)
+        if not accounts:
+            continue
+        to_link = accounts.filtered(lambda a, t=tag: t not in a.tag_ids)
+        if to_link:
+            to_link.write({'tag_ids': [(4, tag.id)]})
+        by_tag[suffix] = (len(accounts), len(to_link))
+    _logger.info(
+        'flamant_sales_report: tag backfill -> %s',
+        ', '.join(f'{k}={v[1]}/{v[0]}' for k, v in by_tag.items()),
+    )
