@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+
+    <!-- Custom Budget toggle in the report toolbar. Two checkbox items
+         control the visibility of our Locked / Estimated budget column
+         groups (handler reads the toggles from options and filters
+         options['columns'] accordingly). Styling matches the native
+         "Geboekte boekingen" dropdown: selected = green check via the
+         'selected' class, no extra icon. -->
+    <t t-name="flamant_sales_report.FlamantBudgetFilter"
+       t-inherit="account_reports.AccountReportFiltersCustomizable"
+       t-inherit-mode="extension">
+        <xpath expr="//div[@id='filter_rounding_unit']" position="before">
+            <t t-if="'flamant_show_locked' in controller.options or 'flamant_show_estimated' in controller.options">
+                <div id="filter_flamant_budget_cols">
+                    <Dropdown navigationOptions="{}">
+                        <button class="btn btn-secondary">
+                            <i class="fa fa-bar-chart me-1"/>Budget
+                        </button>
+                        <t t-set-slot="content">
+                            <DropdownItem
+                                class="{ 'selected': controller.options.flamant_show_locked }"
+                                onSelected="() => this.filterClicked({ optionKey: 'flamant_show_locked', reload: true })"
+                                closingMode="'none'"
+                            >
+                                Locked Budget
+                            </DropdownItem>
+                            <DropdownItem
+                                class="{ 'selected': controller.options.flamant_show_estimated }"
+                                onSelected="() => this.filterClicked({ optionKey: 'flamant_show_estimated', reload: true })"
+                                closingMode="'none'"
+                            >
+                                Estimated Budget
+                            </DropdownItem>
+                        </t>
+                    </Dropdown>
+                </div>
+            </t>
+        </xpath>
+    </t>
+
+</templates>

@@ -27,8 +27,8 @@
         <field name="name">Marge per Business Unit</field>
         <field name="filter_date_range">True</field>
         <field name="filter_period_comparison">True</field>
+        <field name="filter_budgets">False</field>
         <field name="filter_growth_comparison">True</field>
-        <field name="filter_budgets">True</field>
         <field name="filter_show_draft">True</field>
         <field name="filter_unfold_all">True</field>
         <field name="default_opening_date_filter">this_month</field>

@@ -21,12 +21,30 @@ class FlamantBgReportHandler(models.AbstractModel):
         'FLM_BU_ECOM_INT':  '_report_expand_unfoldable_line_flamant_bu_ecom_intl_countries',
     }
 
+    LOCKED_BUDGET_LABELS = {'locked_budget', 'delta_locked_eur', 'delta_locked_pct'}
+    ESTIMATED_BUDGET_LABELS = {'estimated_budget', 'delta_estimated_eur', 'delta_estimated_pct'}
+
     def _custom_options_initializer(self, report, options, previous_options=None):
         super()._custom_options_initializer(report, options, previous_options=previous_options)
-        options['custom_columns_subheaders'] = [
-            {'name': 'Actuals', 'colspan': 6},
-            {'name': 'Budgets', 'colspan': 6},
+        prev = previous_options or {}
+        show_locked = prev.get('flamant_show_locked', True)
+        show_estimated = prev.get('flamant_show_estimated', True)
+        options['flamant_show_locked'] = show_locked
+        options['flamant_show_estimated'] = show_estimated
+        # Drop the hidden budget columns so the report renders
+        # without them. Aggregation expressions still evaluate but
+        # never reach the UI.
+        options['columns'] = [
+            col for col in options['columns']
+            if (show_locked or col.get('expression_label') not in self.LOCKED_BUDGET_LABELS)
+            and (show_estimated or col.get('expression_label') not in self.ESTIMATED_BUDGET_LABELS)
         ]
+        # Build supercolumn subheaders matching the visible columns.
+        subheaders = [{'name': 'Actuals', 'colspan': 6}]
+        budgets_span = (3 if show_locked else 0) + (3 if show_estimated else 0)
+        if budgets_span:
+            subheaders.append({'name': 'Budgets', 'colspan': budgets_span})
+        options['custom_columns_subheaders'] = subheaders
         options['ignore_totals_below_sections'] = True
 
     # ----- helpers ----- #
