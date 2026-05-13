@@ -93,19 +93,6 @@
          Actions
          ================================================================ -->
 
-    <!--
-        Legacy action — kept so that existing Odoo Spreadsheet references
-        pointing to action_flamant_daily_sales do not 404. Not linked to
-        any menu item.
-    -->
-    <record id="action_flamant_daily_sales" model="ir.actions.act_window">
-        <field name="name">Daily Sales (Consolidated)</field>
-        <field name="res_model">flamant.daily.sales</field>
-        <field name="view_mode">list,graph,pivot</field>
-        <field name="search_view_id" ref="flamant_daily_sales_view_search"/>
-        <field name="context">{}</field>
-    </record>
-
     <record id="action_flamant_daily_sales_invoiced" model="ir.actions.act_window">
         <field name="name">Invoiced Sales</field>
         <field name="res_model">flamant.daily.sales</field>
