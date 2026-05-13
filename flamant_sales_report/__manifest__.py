@@ -24,7 +24,6 @@
         'views/flamant_bu_budget_views.xml',
         'views/menus.xml',
         'data/flamant_margin_report.xml',
-        'data/flamant_business_unit_report.xml',
         'data/flamant_business_unit_report_grouped.xml',
     ],
     'assets': {},

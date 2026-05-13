@@ -2,7 +2,7 @@
 <odoo>
     <!--
         ================================================================
-        Marge per BU (gegroepeerd)
+        Marge per Business Unit
         ================================================================
         Variant of flamant_bu_report with an extra supercolumn header
         ("Actuals | Budgets") rendered via custom_columns_subheaders on the
@@ -24,7 +24,7 @@
     -->
 
     <record id="flamant_bg_report" model="account.report">
-        <field name="name">Marge per BU (gegroepeerd)</field>
+        <field name="name">Marge per Business Unit</field>
         <field name="filter_date_range">True</field>
         <field name="filter_period_comparison">True</field>
         <field name="filter_growth_comparison">True</field>
@@ -905,15 +905,15 @@
 
     <!-- Action + menu -->
     <record id="flamant_bg_report_action" model="ir.actions.client">
-        <field name="name">Marge per BU (gegroepeerd)</field>
+        <field name="name">Marge per Business Unit</field>
         <field name="tag">account_report</field>
         <field name="context" eval="{'report_id': ref('flamant_bg_report')}"/>
     </record>
 
     <menuitem id="menu_flamant_bg_report"
-              name="Per Business Unit (gegroepeerd)"
+              name="Per Business Unit"
               parent="menu_flamant_marge_group"
               action="flamant_bg_report_action"
-              sequence="40"/>
+              sequence="30"/>
 </odoo>
 
