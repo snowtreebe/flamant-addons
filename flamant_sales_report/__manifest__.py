@@ -1,31 +1,9 @@
 {
     'name': 'Flamant KPI',
-    'version': '18.0.5.0.0',
+    'version': '18.0.7.1.0',
     'category': 'Sales/Sales',
     'summary': 'Consolidated POS + Sales KPI dashboard with channel / country / shop drilldown and margin reporting',
-    'description': """
-Flamant KPI
-===========
-Consolidates pos.order, sale.order, and customer invoices into a single
-read-only SQL view (flamant.daily.sales) with three dedicated menu entries:
-
-- **Invoiced Sales** — all rows with basis = invoiced
-- **Order Intake**  — all rows with basis = order_intake
-- **Quotations**    — open and cancelled sale.order records (draft, sent, cancel)
-- **Marge-rapport** — native account.report breaking down revenue (70%) and
-  COGS (604%) per sales channel with margin, %margin, budget comparison,
-  and period / year comparisons.
-
-Each operational row carries a clickable Document link back to the
-originating POS order, sales order, or invoice.
-
-Dimensions available per row: date, channel, country, shop label, source.
-
-Additionally extends crm.team with Flamant-specific reporting metadata
-(channel, country, shop label, shop cluster, analytic account) and keeps
-the legacy flamant.shop.budget and flamant.monthly.budget models for
-future budget reporting (menus hidden pending budget v2).
-""",
+    'description': """Flamant KPI - Consolidated sales + margin reporting per channel/country/shop.""",
     'author': 'Digisolid',
     'website': 'https://digisolid.be',
     'depends': [
@@ -37,14 +15,17 @@ future budget reporting (menus hidden pending budget v2).
     ],
     'data': [
         'security/ir.model.access.csv',
+        'views/menu_groups.xml',
         'views/crm_team_views.xml',
         'views/flamant_daily_sales_views.xml',
         'views/flamant_quotation_views.xml',
         'views/flamant_shop_budget_views.xml',
         'views/flamant_monthly_budget_views.xml',
+        'views/flamant_bu_budget_views.xml',
         'views/menus.xml',
         'data/flamant_margin_report.xml',
         'data/flamant_business_unit_report.xml',
+        'data/flamant_business_unit_report_grouped.xml',
     ],
     'assets': {},
     'post_init_hook': 'post_init_hook',

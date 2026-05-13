@@ -3,3 +3,6 @@ from . import flamant_daily_sales
 from . import flamant_quotation
 from . import flamant_shop_budget
 from . import flamant_monthly_budget
+from . import flamant_bu_budget
+from . import flamant_bu_report_handler
+from . import flamant_bg_report_handler

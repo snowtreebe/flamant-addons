@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Root + 3 group containers, loaded EARLY so other view/data
+         files can reference them as parent_id. -->
+
+    <menuitem id="menu_flamant_sales_root"
+              name="Flamant KPI"
+              sequence="25"
+              web_icon="flamant_sales_report,static/description/icon.png"/>
+
+    <menuitem id="menu_flamant_orders_group"
+              name="Orders"
+              parent="menu_flamant_sales_root"
+              sequence="10"/>
+
+    <menuitem id="menu_flamant_marge_group"
+              name="Marge"
+              parent="menu_flamant_sales_root"
+              sequence="20"/>
+
+    <menuitem id="menu_flamant_budget_group"
+              name="Budget"
+              parent="menu_flamant_sales_root"
+              sequence="30"/>
+</odoo>

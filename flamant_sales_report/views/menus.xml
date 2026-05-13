@@ -1,25 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <menuitem id="menu_flamant_sales_root"
-              name="Flamant KPI"
-              sequence="25"
-              web_icon="flamant_sales_report,static/description/icon.png"/>
+    <!-- Orders child menus. Loaded AFTER flamant_quotation_views.xml
+         and flamant_daily_sales_views.xml so the action records exist. -->
 
     <menuitem id="menu_flamant_quotation"
               name="Quotations"
-              parent="menu_flamant_sales_root"
+              parent="menu_flamant_orders_group"
               action="action_flamant_quotation"
               sequence="10"/>
 
     <menuitem id="menu_flamant_daily_sales_intake"
               name="Order Intake"
-              parent="menu_flamant_sales_root"
+              parent="menu_flamant_orders_group"
               action="action_flamant_daily_sales_intake"
               sequence="20"/>
 
     <menuitem id="menu_flamant_daily_sales_invoiced"
               name="Invoiced Sales"
-              parent="menu_flamant_sales_root"
+              parent="menu_flamant_orders_group"
               action="action_flamant_daily_sales_invoiced"
               sequence="30"/>
 </odoo>

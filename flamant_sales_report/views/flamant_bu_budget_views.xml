@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="flamant_bu_budget_view_tree" model="ir.ui.view">
+        <field name="name">flamant.bu.budget.tree</field>
+        <field name="model">flamant.bu.budget</field>
+        <field name="arch" type="xml">
+            <list string="BU Budget" editable="bottom"
+                  default_order="year desc, month, business_unit">
+                <field name="business_unit"/>
+                <field name="year"/>
+                <field name="month"/>
+                <field name="locked_amount" sum="Total locked"/>
+                <field name="estimated_amount" sum="Total estimated"/>
+                <field name="period_start" optional="hide"/>
+                <field name="company_id" optional="hide" groups="base.group_multi_company"/>
+                <field name="currency_id" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="flamant_bu_budget_view_form" model="ir.ui.view">
+        <field name="name">flamant.bu.budget.form</field>
+        <field name="model">flamant.bu.budget</field>
+        <field name="arch" type="xml">
+            <form string="BU Budget">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="business_unit"/>
+                            <field name="year"/>
+                            <field name="month"/>
+                        </group>
+                        <group>
+                            <field name="locked_amount"/>
+                            <field name="estimated_amount"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="currency_id" groups="base.group_multi_currency"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="flamant_bu_budget_view_search" model="ir.ui.view">
+        <field name="name">flamant.bu.budget.search</field>
+        <field name="model">flamant.bu.budget</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="business_unit"/>
+                <field name="year"/>
+                <filter name="this_year" string="This Year"
+                        domain="[('year','=', context_today().year)]"/>
+                <filter name="next_year" string="Next Year"
+                        domain="[('year','=', context_today().year + 1)]"/>
+                <group expand="1" string="Group By">
+                    <filter name="group_year" string="Year"
+                            context="{'group_by':'year'}"/>
+                    <filter name="group_bu" string="Business Unit"
+                            context="{'group_by':'business_unit'}"/>
+                    <filter name="group_month" string="Month"
+                            context="{'group_by':'period_start:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="flamant_bu_budget_view_pivot" model="ir.ui.view">
+        <field name="name">flamant.bu.budget.pivot</field>
+        <field name="model">flamant.bu.budget</field>
+        <field name="arch" type="xml">
+            <pivot string="BU Budget" sample="1">
+                <field name="business_unit" type="row"/>
+                <field name="period_start" type="col" interval="month"/>
+                <field name="locked_amount" type="measure"/>
+                <field name="estimated_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_flamant_bu_budget" model="ir.actions.act_window">
+        <field name="name">Budget per Business Unit</field>
+        <field name="res_model">flamant.bu.budget</field>
+        <field name="view_mode">list,pivot,form</field>
+        <field name="search_view_id" ref="flamant_bu_budget_view_search"/>
+        <field name="context">{'search_default_this_year': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Voer omzet-budgetten per Business Unit per maand in.
+            </p>
+            <p>
+                Twee bedragen per cel: <strong>Locked</strong> (RvB-budget) en
+                <strong>Estimated</strong> (rolling forecast). Parent-rijen
+                (Retail, Ecommerce, Totaal) worden in het rapport automatisch
+                opgeteld uit de leaf-rijen.
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_flamant_bu_budget"
+              name="Per Business Unit"
+              parent="menu_flamant_budget_group"
+              action="action_flamant_bu_budget"
+              sequence="10"/>
+
+</odoo>
