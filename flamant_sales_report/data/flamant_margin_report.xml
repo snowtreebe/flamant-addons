@@ -59,14 +59,14 @@
         <field name="report_line_id" ref="flamant_margin_line_shops"/>
         <field name="label">omzet</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'shops')]</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.channel', '=', 'shops')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_margin_expr_shops_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_shops"/>
         <field name="label">cogs</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'shops')]</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.channel', '=', 'shops')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_margin_expr_shops_marge" model="account.report.expression">
@@ -94,14 +94,14 @@
         <field name="report_line_id" ref="flamant_margin_line_ecom"/>
         <field name="label">omzet</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'ecommerce')]</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.channel', '=', 'ecommerce')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_margin_expr_ecom_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_ecom"/>
         <field name="label">cogs</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'ecommerce')]</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.channel', '=', 'ecommerce')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_margin_expr_ecom_marge" model="account.report.expression">
@@ -129,14 +129,14 @@
         <field name="report_line_id" ref="flamant_margin_line_wholesale"/>
         <field name="label">omzet</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'wholesale')]</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.channel', '=', 'wholesale')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_margin_expr_wholesale_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_wholesale"/>
         <field name="label">cogs</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'wholesale')]</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.channel', '=', 'wholesale')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_margin_expr_wholesale_marge" model="account.report.expression">
@@ -164,14 +164,14 @@
         <field name="report_line_id" ref="flamant_margin_line_franchise"/>
         <field name="label">omzet</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'franchise')]</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.channel', '=', 'franchise')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_margin_expr_franchise_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_franchise"/>
         <field name="label">cogs</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'franchise')]</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.channel', '=', 'franchise')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_margin_expr_franchise_marge" model="account.report.expression">
@@ -199,14 +199,14 @@
         <field name="report_line_id" ref="flamant_margin_line_outlet"/>
         <field name="label">omzet</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'outlet')]</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.channel', '=', 'outlet')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_margin_expr_outlet_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_outlet"/>
         <field name="label">cogs</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'outlet')]</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.channel', '=', 'outlet')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_margin_expr_outlet_marge" model="account.report.expression">
@@ -234,14 +234,14 @@
         <field name="report_line_id" ref="flamant_margin_line_fhome"/>
         <field name="label">omzet</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'flamant_home')]</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.channel', '=', 'flamant_home')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_margin_expr_fhome_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_fhome"/>
         <field name="label">cogs</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'flamant_home')]</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.channel', '=', 'flamant_home')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_margin_expr_fhome_marge" model="account.report.expression">
@@ -269,14 +269,14 @@
         <field name="report_line_id" ref="flamant_margin_line_other"/>
         <field name="label">omzet</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'other')]</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.channel', '=', 'other')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_margin_expr_other_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_margin_line_other"/>
         <field name="label">cogs</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'other')]</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.channel', '=', 'other')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_margin_expr_other_marge" model="account.report.expression">
@@ -371,7 +371,7 @@
         <field name="report_line_id" ref="flamant_margin_detail_line_shops_rev"/>
         <field name="label">balance</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'shops')]</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.channel', '=', 'shops')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_margin_detail_line_shops_cogs" model="account.report.line">
@@ -385,7 +385,7 @@
         <field name="report_line_id" ref="flamant_margin_detail_line_shops_cogs"/>
         <field name="label">balance</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'shops')]</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.channel', '=', 'shops')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_margin_detail_line_shops_marge" model="account.report.line">
@@ -435,7 +435,7 @@
         <field name="report_line_id" ref="flamant_margin_detail_line_ecom_rev"/>
         <field name="label">balance</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'ecommerce')]</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.channel', '=', 'ecommerce')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_margin_detail_line_ecom_cogs" model="account.report.line">
@@ -449,7 +449,7 @@
         <field name="report_line_id" ref="flamant_margin_detail_line_ecom_cogs"/>
         <field name="label">balance</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'ecommerce')]</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.channel', '=', 'ecommerce')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_margin_detail_line_ecom_marge" model="account.report.line">
@@ -499,7 +499,7 @@
         <field name="report_line_id" ref="flamant_margin_detail_line_wholesale_rev"/>
         <field name="label">balance</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'wholesale')]</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.channel', '=', 'wholesale')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_margin_detail_line_wholesale_cogs" model="account.report.line">
@@ -513,7 +513,7 @@
         <field name="report_line_id" ref="flamant_margin_detail_line_wholesale_cogs"/>
         <field name="label">balance</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'wholesale')]</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.channel', '=', 'wholesale')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_margin_detail_line_wholesale_marge" model="account.report.line">
@@ -563,7 +563,7 @@
         <field name="report_line_id" ref="flamant_margin_detail_line_franchise_rev"/>
         <field name="label">balance</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'franchise')]</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.channel', '=', 'franchise')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_margin_detail_line_franchise_cogs" model="account.report.line">
@@ -577,7 +577,7 @@
         <field name="report_line_id" ref="flamant_margin_detail_line_franchise_cogs"/>
         <field name="label">balance</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'franchise')]</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.channel', '=', 'franchise')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_margin_detail_line_franchise_marge" model="account.report.line">
@@ -627,7 +627,7 @@
         <field name="report_line_id" ref="flamant_margin_detail_line_outlet_rev"/>
         <field name="label">balance</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'outlet')]</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.channel', '=', 'outlet')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_margin_detail_line_outlet_cogs" model="account.report.line">
@@ -641,7 +641,7 @@
         <field name="report_line_id" ref="flamant_margin_detail_line_outlet_cogs"/>
         <field name="label">balance</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'outlet')]</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.channel', '=', 'outlet')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_margin_detail_line_outlet_marge" model="account.report.line">
@@ -691,7 +691,7 @@
         <field name="report_line_id" ref="flamant_margin_detail_line_fhome_rev"/>
         <field name="label">balance</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'flamant_home')]</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.channel', '=', 'flamant_home')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_margin_detail_line_fhome_cogs" model="account.report.line">
@@ -705,7 +705,7 @@
         <field name="report_line_id" ref="flamant_margin_detail_line_fhome_cogs"/>
         <field name="label">balance</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'flamant_home')]</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.channel', '=', 'flamant_home')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_margin_detail_line_fhome_marge" model="account.report.line">
@@ -755,7 +755,7 @@
         <field name="report_line_id" ref="flamant_margin_detail_line_other_rev"/>
         <field name="label">balance</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.x_channel', '=', 'other')]</field>
+        <field name="formula">[('account_id.code', '=like', '70%'), ('move_id.team_id.channel', '=', 'other')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_margin_detail_line_other_cogs" model="account.report.line">
@@ -769,7 +769,7 @@
         <field name="report_line_id" ref="flamant_margin_detail_line_other_cogs"/>
         <field name="label">balance</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.x_channel', '=', 'other')]</field>
+        <field name="formula">[('account_id.code', '=like', '604%'), ('move_id.team_id.channel', '=', 'other')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_margin_detail_line_other_marge" model="account.report.line">

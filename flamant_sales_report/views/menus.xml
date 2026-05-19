@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- Orders child menus. Loaded AFTER flamant_quotation_views.xml
-         and flamant_daily_sales_views.xml so the action records exist. -->
+         and flamant_sales_header_views.xml so the action records exist. -->
 
     <menuitem id="menu_flamant_quotation"
               name="Quotations"
@@ -9,15 +9,21 @@
               action="action_flamant_quotation"
               sequence="10"/>
 
-    <menuitem id="menu_flamant_daily_sales_intake"
+    <menuitem id="menu_flamant_sales_header_intake"
               name="Order Intake"
               parent="menu_flamant_orders_group"
-              action="action_flamant_daily_sales_intake"
+              action="action_flamant_sales_header_intake"
               sequence="20"/>
 
-    <menuitem id="menu_flamant_daily_sales_invoiced"
+    <menuitem id="menu_flamant_order_intake_lines"
+              name="Order Intake Lines"
+              parent="menu_flamant_orders_group"
+              action="action_flamant_sales_line"
+              sequence="25"/>
+
+    <menuitem id="menu_flamant_sales_header_invoiced"
               name="Invoiced Sales"
               parent="menu_flamant_orders_group"
-              action="action_flamant_daily_sales_invoiced"
+              action="action_flamant_sales_header_invoiced"
               sequence="30"/>
 </odoo>

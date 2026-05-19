@@ -4,7 +4,7 @@ from odoo import api, fields, models, tools
 class FlamantQuotation(models.Model):
     """Read-only view of open and cancelled sales quotations.
 
-    Pipeline counterpart to flamant.daily.sales: instead of confirmed
+    Pipeline counterpart to flamant.sales.header: instead of confirmed
     revenue, this surfaces sale.order records that are still in
     quotation stage (draft, sent) or cancelled. Confirmed orders are
     intentionally excluded — those belong in Order Intake.
@@ -86,9 +86,9 @@ class FlamantQuotation(models.Model):
                     so.team_id                                           AS team_id,
                     so.user_id                                           AS user_id,
                     so.partner_id                                        AS partner_id,
-                    t.x_channel                                          AS channel,
-                    t.x_country_code                                     AS country_code,
-                    COALESCE(NULLIF(t.x_shop_label, ''),
+                    t.channel                                          AS channel,
+                    t.country_code                                     AS country_code,
+                    COALESCE(NULLIF(t.shop_label, ''),
                              t.name->>'en_US')                           AS shop_label,
                     so.validity_date                                     AS validity_date,
                     so.amount_untaxed                                    AS amount_untaxed,

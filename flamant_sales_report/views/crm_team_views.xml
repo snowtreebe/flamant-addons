@@ -7,11 +7,12 @@
         <field name="arch" type="xml">
             <xpath expr="//sheet" position="inside">
                 <group string="Flamant Reporting">
-                    <field name="x_channel"/>
-                    <field name="x_country_code"/>
-                    <field name="x_shop_label"/>
-                    <field name="x_shop_cluster"/>
-                    <field name="x_analytic_account_id"/>
+                    <field name="channel"/>
+                    <field name="country_code"/>
+                    <field name="shop_label"/>
+                    <field name="shop_cluster"/>
+                    <field name="comparable" widget="boolean_toggle"/>
+                    <field name="analytic_account_id"/>
                 </group>
             </xpath>
         </field>
@@ -23,10 +24,11 @@
         <field name="inherit_id" ref="sales_team.crm_team_view_tree"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='name']" position="after">
-                <field name="x_channel" optional="show"/>
-                <field name="x_country_code" optional="show"/>
-                <field name="x_shop_label" optional="show"/>
-                <field name="x_shop_cluster" optional="show"/>
+                <field name="channel" optional="show"/>
+                <field name="country_code" optional="show"/>
+                <field name="shop_label" optional="show"/>
+                <field name="shop_cluster" optional="show"/>
+                <field name="comparable" optional="hide"/>
             </xpath>
         </field>
     </record>

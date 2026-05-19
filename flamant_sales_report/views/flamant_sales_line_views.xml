@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ================================================================
+         Search view
+         ================================================================ -->
+    <record id="flamant_sales_line_view_search" model="ir.ui.view">
+        <field name="name">flamant.sales.line.search</field>
+        <field name="model">flamant.sales.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="product_id"/>
+                <field name="product_categ_id"/>
+                <field name="source_ref" string="Reference"/>
+                <field name="team_id"/>
+                <field name="shop_label"/>
+                <field name="shop_cluster"/>
+                <field name="analytic_account_id"/>
+                <separator/>
+                <filter name="intake" string="Order Intake"
+                        domain="[('basis','=','order_intake')]"/>
+                <filter name="invoiced" string="Invoiced Sales"
+                        domain="[('basis','=','invoiced')]"/>
+                <separator/>
+                <filter name="svl_actual" string="Real (SVL) cost only"
+                        domain="[('cost_source','=','svl_actual')]"/>
+                <filter name="fallback_only" string="Standard-price fallback"
+                        domain="[('cost_source','=','standard_price_fallback')]"/>
+                <filter name="no_cost" string="No cost data (services)"
+                        domain="[('cost_source','=','none')]"/>
+                <separator/>
+                <filter name="from_pos"     string="POS"     domain="[('source','=','pos')]"/>
+                <filter name="from_sale"    string="Sale Order" domain="[('source','=','sale')]"/>
+                <filter name="from_invoice" string="Invoice"  domain="[('source','=','invoice')]"/>
+                <separator/>
+                <filter name="comparable" string="Comparable shops only"
+                        domain="[('is_comparable','=',True)]"/>
+                <separator/>
+                <filter name="date_filter" string="Date" date="date"/>
+                <group expand="1" string="Group By">
+                    <filter name="group_product"     string="Product"
+                            context="{'group_by':'product_id'}"/>
+                    <filter name="group_category"    string="Category"
+                            context="{'group_by':'product_categ_id'}"/>
+                    <filter name="group_channel"     string="Channel"
+                            context="{'group_by':'channel'}"/>
+                    <filter name="group_country"     string="Country"
+                            context="{'group_by':'country_code'}"/>
+                    <filter name="group_comparable"  string="Comparable"
+                            context="{'group_by':'is_comparable'}"/>
+                    <filter name="group_shop"        string="Shop"
+                            context="{'group_by':'shop_label'}"/>
+                    <filter name="group_cluster"     string="Shop Cluster"
+                            context="{'group_by':'shop_cluster'}"/>
+                    <filter name="group_team"        string="Sales Team"
+                            context="{'group_by':'team_id'}"/>
+                    <filter name="group_analytic"    string="Budget Analytic Account"
+                            context="{'group_by':'analytic_account_id'}"/>
+                    <filter name="group_basis"       string="Basis"
+                            context="{'group_by':'basis'}"/>
+                    <filter name="group_source"      string="Source"
+                            context="{'group_by':'source'}"/>
+                    <filter name="group_cost_source" string="Cost Source"
+                            context="{'group_by':'cost_source'}"/>
+                    <filter name="group_date_month"  string="Month"
+                            context="{'group_by':'date:month'}"/>
+                    <filter name="group_date_year"   string="Year"
+                            context="{'group_by':'date:year'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Pivot view (default)
+         ================================================================ -->
+    <record id="flamant_sales_line_view_pivot" model="ir.ui.view">
+        <field name="name">flamant.sales.line.pivot</field>
+        <field name="model">flamant.sales.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Order Intake Lines">
+                <field name="qty"     type="measure"/>
+                <field name="revenue" type="measure"/>
+                <field name="cost"    type="measure"/>
+                <field name="margin"  type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         List view
+         ================================================================ -->
+    <record id="flamant_sales_line_view_list" model="ir.ui.view">
+        <field name="name">flamant.sales.line.list</field>
+        <field name="model">flamant.sales.line</field>
+        <field name="arch" type="xml">
+            <list string="Order Intake Lines"
+                  create="false" delete="false" edit="false">
+                <field name="date"/>
+                <field name="basis"/>
+                <field name="source"/>
+                <field name="source_doc" string="Order" widget="reference" readonly="1"/>
+                <field name="source_ref" string="Reference" optional="hide"/>
+                <field name="team_id"          optional="show"/>
+                <field name="channel"          optional="show"/>
+                <field name="country_code"     optional="hide"/>
+                <field name="shop_label"       optional="hide"/>
+                <field name="product_id"/>
+                <field name="product_categ_id" optional="hide"/>
+                <field name="qty"     sum="Total Qty"/>
+                <field name="revenue" sum="Total Revenue"/>
+                <field name="cost"    sum="Total Cost"/>
+                <field name="margin"  sum="Total Margin"/>
+                <field name="margin_pct"/>
+                <field name="cost_source"/>
+                <field name="currency_id" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Graph view
+         ================================================================ -->
+    <record id="flamant_sales_line_view_graph" model="ir.ui.view">
+        <field name="name">flamant.sales.line.graph</field>
+        <field name="model">flamant.sales.line</field>
+        <field name="arch" type="xml">
+            <graph string="Order Intake Lines" type="bar">
+                <field name="product_categ_id"/>
+                <field name="margin" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- ================================================================
+         Action
+         ================================================================ -->
+    <record id="action_flamant_sales_line" model="ir.actions.act_window">
+        <field name="name">Order Intake Lines</field>
+        <field name="res_model">flamant.sales.line</field>
+        <field name="view_mode">list,graph,pivot</field>
+        <field name="domain">[('basis', '=', 'order_intake')]</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No order lines yet</p>
+            <p>Line-level view of order intake (POS lines + confirmed sale order
+               lines), with cost and margin derived from
+               <code>stock.valuation.layer</code> (AVCO at delivery) or
+               <code>product.standard_price</code> as a fallback. The Cost Source
+               column flags which path produced the cost figure.</p>
+        </field>
+    </record>
+
+</odoo>

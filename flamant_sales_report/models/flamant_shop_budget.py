@@ -39,8 +39,8 @@ class FlamantShopBudget(models.Model):
         required=True,
         currency_field='currency_id',
     )
-    channel = fields.Selection(related='team_id.x_channel', store=True, readonly=True)
-    country_code = fields.Selection(related='team_id.x_country_code', store=True, readonly=True)
+    channel = fields.Selection(related='team_id.channel', store=True, readonly=True)
+    country_code = fields.Selection(related='team_id.country_code', store=True, readonly=True)
     shop_label = fields.Char(
         compute='_compute_shop_label', store=True, readonly=True,
     )
@@ -63,10 +63,10 @@ class FlamantShopBudget(models.Model):
             else:
                 rec.period_start = False
 
-    @api.depends('team_id.x_shop_label', 'team_id.name')
+    @api.depends('team_id.shop_label', 'team_id.name')
     def _compute_shop_label(self):
         for rec in self:
-            rec.shop_label = rec.team_id.x_shop_label or rec.team_id.name
+            rec.shop_label = rec.team_id.shop_label or rec.team_id.name
 
     def name_get(self):
         month_labels = dict(self._fields['month'].selection)

@@ -121,27 +121,27 @@ def _flamant_remap(env):
     updated = 0
     for team in teams:
         name = (team.name or '').lower()
-        can_remap = not team.x_channel or team.x_channel == 'other'
+        can_remap = not team.channel or team.channel == 'other'
         matched = False
         for needle, channel, country, label, cluster in TEAM_DEFAULTS:
             if needle in name:
                 matched = True
                 vals = {}
                 if can_remap:
-                    vals['x_channel'] = channel
-                    vals['x_country_code'] = country
-                if label and (not team.x_shop_label or can_remap):
-                    vals['x_shop_label'] = label
-                if cluster and (not team.x_shop_cluster or can_remap):
-                    vals['x_shop_cluster'] = cluster
+                    vals['channel'] = channel
+                    vals['country_code'] = country
+                if label and (not team.shop_label or can_remap):
+                    vals['shop_label'] = label
+                if cluster and (not team.shop_cluster or can_remap):
+                    vals['shop_cluster'] = cluster
                 if vals:
                     team.write(vals)
                     updated += 1
                 break
-        if not matched and not team.x_channel:
+        if not matched and not team.channel:
             team.write({
-                'x_channel': 'other',
-                'x_country_code': 'OTHER',
+                'channel': 'other',
+                'country_code': 'OTHER',
             })
             updated += 1
     _logger.info('flamant_sales_report: auto-mapped %s sales teams', updated)

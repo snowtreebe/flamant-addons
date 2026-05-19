@@ -83,8 +83,23 @@ class FlamantBgReportHandler(models.AbstractModel):
     # ----- postprocess ----- #
 
     def _custom_line_postprocessor(self, report, options, lines):
+        """Mark our 3 drilldown lines as unfoldable + register their expand
+        function, and — when "Allemaal uitvouwen" is on — also inject the
+        expanded child rows here.
+
+        Reason: Odoo's `_fully_unfold_lines_if_needed` batch runs BEFORE the
+        custom postprocessor, and sets `expand_function=None` for any line
+        without a static `groupby`.  That makes the framework skip our 3
+        drilldowns on unfold-all.  We do the expansion ourselves so the
+        result is identical to manually clicking each row.
+        """
         lines = super()._custom_line_postprocessor(report, options, lines)
+        unfold_all = bool(options.get('unfold_all'))
+
+        result = []
         for line in lines:
+            result.append(line)
+
             try:
                 model, line_id = report._get_model_info_from_id(line['id'])
             except Exception:
@@ -92,11 +107,32 @@ class FlamantBgReportHandler(models.AbstractModel):
             if model != 'account.report.line':
                 continue
             rline = self.env['account.report.line'].browse(line_id)
-            fn = self._DRILLDOWN_FUNCTIONS.get(rline.code)
-            if fn:
-                line['unfoldable'] = True
-                line['expand_function'] = fn
-        return lines
+            fn_name = self._DRILLDOWN_FUNCTIONS.get(rline.code)
+            if not fn_name:
+                continue
+
+            line['unfoldable'] = True
+            line['expand_function'] = fn_name
+
+            if not unfold_all:
+                continue
+
+            # Skip if children are already in the buffer (manual unfold or a
+            # prior pass already injected them).
+            already_expanded = any(
+                l.get('parent_id') == line['id'] for l in lines
+            )
+            if already_expanded:
+                line['unfolded'] = True
+                continue
+
+            line['unfolded'] = True
+            expansion = getattr(self, fn_name)(
+                line['id'], None, options, None, 0,
+            )
+            for child in expansion.get('lines', []):
+                result.append(child)
+        return result
 
     # ----- retail shops drilldown ----- #
 
@@ -118,8 +154,8 @@ class FlamantBgReportHandler(models.AbstractModel):
         country = 'BE' if parent_line.code == 'FLM_BU_RETAIL_BE' else 'FR'
 
         teams = self.env['crm.team'].search([
-            ('x_channel', '=', 'shops'),
-            ('x_country_code', '=', country),
+            ('channel', '=', 'shops'),
+            ('country_code', '=', country),
         ], order='name')
         if not teams:
             return empty
@@ -161,7 +197,7 @@ class FlamantBgReportHandler(models.AbstractModel):
             values = self._flamant_drilldown_values(omzet, cogs, discount)
             columns = self._flamant_drilldown_columns(report, options, values)
 
-            team_label = team.x_shop_label or team.name
+            team_label = team.shop_label or team.name
             if isinstance(team_label, dict):
                 team_label = team_label.get('en_US') or next(iter(team_label.values()), '')
 
@@ -233,7 +269,7 @@ class FlamantBgReportHandler(models.AbstractModel):
             JOIN crm_team          t    ON t.id    = am.team_id
             LEFT JOIN res_partner  ship ON ship.id = am.partner_shipping_id
             LEFT JOIN res_country  c    ON c.id    = ship.country_id
-            WHERE t.x_channel = 'ecommerce'
+            WHERE t.channel = 'ecommerce'
               AND aml.account_id = ANY(%s)
               AND COALESCE(c.code, 'XX') NOT IN ('BE', 'FR')
               AND aml.date BETWEEN %s AND %s

@@ -9,12 +9,12 @@
               web_icon="flamant_sales_report,static/description/icon.png"/>
 
     <menuitem id="menu_flamant_orders_group"
-              name="Orders"
+              name="Order Rapports"
               parent="menu_flamant_sales_root"
               sequence="10"/>
 
     <menuitem id="menu_flamant_marge_group"
-              name="Marge"
+              name="Marge Rapports"
               parent="menu_flamant_sales_root"
               sequence="20"/>
 

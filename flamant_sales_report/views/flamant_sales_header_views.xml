@@ -4,14 +4,15 @@
     <!-- ================================================================
          Search view
          ================================================================ -->
-    <record id="flamant_daily_sales_view_search" model="ir.ui.view">
-        <field name="name">flamant.daily.sales.search</field>
-        <field name="model">flamant.daily.sales</field>
+    <record id="flamant_sales_header_view_search" model="ir.ui.view">
+        <field name="name">flamant.sales.header.search</field>
+        <field name="model">flamant.sales.header</field>
         <field name="arch" type="xml">
             <search>
                 <field name="team_id"/>
                 <field name="shop_label"/>
                 <field name="shop_cluster"/>
+                <field name="analytic_account_id"/>
                 <field name="source_ref"/>
                 <filter name="order_intake" string="Order Intake" domain="[('basis','=','order_intake')]"/>
                 <filter name="invoiced"     string="Invoiced"     domain="[('basis','=','invoiced')]"/>
@@ -20,14 +21,20 @@
                 <filter name="sale"    string="Sales only"   domain="[('source','=','sale')]"/>
                 <filter name="invoice" string="Invoice only" domain="[('source','=','invoice')]"/>
                 <separator/>
+                <filter name="comparable" string="Comparable shops only"
+                        domain="[('is_comparable','=',True)]"/>
+                <separator/>
                 <filter name="date_filter" string="Date" date="date"/>
                 <group expand="1" string="Group By">
                     <filter name="group_basis"       string="Basis"        context="{'group_by':'basis'}"/>
                     <filter name="group_channel"     string="Channel"      context="{'group_by':'channel'}"/>
                     <filter name="group_country"     string="Country"      context="{'group_by':'country_code'}"/>
+                    <filter name="group_comparable"  string="Comparable"   context="{'group_by':'is_comparable'}"/>
                     <filter name="group_cluster"     string="Shop Cluster" context="{'group_by':'shop_cluster'}"/>
                     <filter name="group_shop"        string="Shop"         context="{'group_by':'shop_label'}"/>
                     <filter name="group_team"        string="Sales Team"   context="{'group_by':'team_id'}"/>
+                    <filter name="group_analytic"    string="Budget Analytic Account"
+                            context="{'group_by':'analytic_account_id'}"/>
                     <filter name="group_source"      string="Source"       context="{'group_by':'source'}"/>
                     <filter name="group_date_day"    string="Day"          context="{'group_by':'date:day'}"/>
                     <filter name="group_date_week"   string="Week"         context="{'group_by':'date:week'}"/>
@@ -41,9 +48,9 @@
     <!-- ================================================================
          List view
          ================================================================ -->
-    <record id="flamant_daily_sales_view_tree" model="ir.ui.view">
-        <field name="name">flamant.daily.sales.tree</field>
-        <field name="model">flamant.daily.sales</field>
+    <record id="flamant_sales_header_view_tree" model="ir.ui.view">
+        <field name="name">flamant.sales.header.tree</field>
+        <field name="model">flamant.sales.header</field>
         <field name="arch" type="xml">
             <list string="Daily Sales" create="false" edit="false" delete="false">
                 <field name="date"/>
@@ -64,9 +71,9 @@
     <!-- ================================================================
          Pivot view — intentionally blank; configure per use case
          ================================================================ -->
-    <record id="flamant_daily_sales_view_pivot" model="ir.ui.view">
-        <field name="name">flamant.daily.sales.pivot</field>
-        <field name="model">flamant.daily.sales</field>
+    <record id="flamant_sales_header_view_pivot" model="ir.ui.view">
+        <field name="name">flamant.sales.header.pivot</field>
+        <field name="model">flamant.sales.header</field>
         <field name="arch" type="xml">
             <pivot string="Daily Sales">
                 <field name="amount_untaxed" type="measure"/>
@@ -77,9 +84,9 @@
     <!-- ================================================================
          Graph view
          ================================================================ -->
-    <record id="flamant_daily_sales_view_graph" model="ir.ui.view">
-        <field name="name">flamant.daily.sales.graph</field>
-        <field name="model">flamant.daily.sales</field>
+    <record id="flamant_sales_header_view_graph" model="ir.ui.view">
+        <field name="name">flamant.sales.header.graph</field>
+        <field name="model">flamant.sales.header</field>
         <field name="arch" type="xml">
             <graph string="Daily Sales" type="bar" sample="1">
                 <field name="date" interval="day"/>
@@ -93,24 +100,24 @@
          Actions
          ================================================================ -->
 
-    <record id="action_flamant_daily_sales_invoiced" model="ir.actions.act_window">
+    <record id="action_flamant_sales_header_invoiced" model="ir.actions.act_window">
         <field name="name">Invoiced Sales</field>
-        <field name="res_model">flamant.daily.sales</field>
+        <field name="res_model">flamant.sales.header</field>
         <field name="view_mode">list,graph,pivot</field>
         <field name="domain">[('basis', '=', 'invoiced')]</field>
-        <field name="search_view_id" ref="flamant_daily_sales_view_search"/>
+        <field name="search_view_id" ref="flamant_sales_header_view_search"/>
         <field name="context">{}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Geen gefactureerde verkopen gevonden</p>
         </field>
     </record>
 
-    <record id="action_flamant_daily_sales_intake" model="ir.actions.act_window">
+    <record id="action_flamant_sales_header_intake" model="ir.actions.act_window">
         <field name="name">Order Intake</field>
-        <field name="res_model">flamant.daily.sales</field>
+        <field name="res_model">flamant.sales.header</field>
         <field name="view_mode">list,graph,pivot</field>
         <field name="domain">[('basis', '=', 'order_intake')]</field>
-        <field name="search_view_id" ref="flamant_daily_sales_view_search"/>
+        <field name="search_view_id" ref="flamant_sales_header_view_search"/>
         <field name="context">{}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Geen order intake gevonden</p>

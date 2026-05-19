@@ -5,8 +5,8 @@ class FlamantMonthlyBudget(models.Model):
     """Read-only view: monthly budget per sales team from Odoo's account.budget.
 
     Joins budget_line → account.analytic.account → crm.team via
-    x_analytic_account_id, so the same channel/country/shop dimensions as
-    flamant.daily.sales are available for pivot reporting.
+    analytic_account_id, so the same channel/country/shop dimensions as
+    flamant.sales.header are available for pivot reporting.
 
     Only lines whose analytic account is linked to at least one sales team
     are included.
@@ -58,16 +58,16 @@ class FlamantMonthlyBudget(models.Model):
                     EXTRACT(MONTH FROM bl.date_from)::int                          AS month_num,
                     t.id                                                           AS team_id,
                     bl.account_id                                                  AS analytic_account_id,
-                    t.x_channel                                                    AS channel,
-                    t.x_country_code                                               AS country_code,
-                    COALESCE(NULLIF(t.x_shop_label, ''), t.name->>'en_US')         AS shop_label,
-                    COALESCE(NULLIF(t.x_shop_cluster, ''), t.x_shop_label,
+                    t.channel                                                    AS channel,
+                    t.country_code                                               AS country_code,
+                    COALESCE(NULLIF(t.shop_label, ''), t.name->>'en_US')         AS shop_label,
+                    COALESCE(NULLIF(t.shop_cluster, ''), t.shop_label,
                              t.name->>'en_US')                                     AS shop_cluster,
                     bl.budget_amount                                               AS amount,
                     bl.company_id                                                  AS company_id,
                     rc.currency_id                                                 AS currency_id
                 FROM budget_line bl
-                JOIN crm_team     t  ON t.x_analytic_account_id = bl.account_id
+                JOIN crm_team     t  ON t.analytic_account_id = bl.account_id
                 JOIN res_company  rc ON rc.id = bl.company_id
                 WHERE bl.account_id IS NOT NULL
             )

@@ -18,7 +18,7 @@
           - Budget overlay enabled (filter_budgets=True)
 
         Country logic differs by BU:
-          - Retail country = team.x_country_code (shop's physical country)
+          - Retail country = team.country_code (shop's physical country)
           - Ecommerce country = partner_shipping_id.country_id.code
             (BE / FR explicitly; everything else lumped as INT)
     -->
@@ -121,14 +121,14 @@
         <field name="report_line_id" ref="flamant_bg_line_retail"/>
         <field name="label">omzet</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.x_channel', '=', 'shops')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'shops')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_bg_expr_retail_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_bg_line_retail"/>
         <field name="label">cogs</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.x_channel', '=', 'shops')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'shops')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_bg_expr_retail_marge" model="account.report.expression">
@@ -152,19 +152,20 @@
         <field name="name">Belgium</field>
         <field name="code">FLM_BU_RETAIL_BE</field>
         <field name="sequence">11</field>
+        <field name="foldable">True</field>
     </record>
     <record id="flamant_bg_expr_retail_be_omzet" model="account.report.expression">
         <field name="report_line_id" ref="flamant_bg_line_retail_be"/>
         <field name="label">omzet</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.x_channel', '=', 'shops'), ('move_id.team_id.x_country_code', '=', 'BE')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'shops'), ('move_id.team_id.country_code', '=', 'BE')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_bg_expr_retail_be_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_bg_line_retail_be"/>
         <field name="label">cogs</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.x_channel', '=', 'shops'), ('move_id.team_id.x_country_code', '=', 'BE')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'shops'), ('move_id.team_id.country_code', '=', 'BE')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_bg_expr_retail_be_marge" model="account.report.expression">
@@ -188,19 +189,20 @@
         <field name="name">France</field>
         <field name="code">FLM_BU_RETAIL_FR</field>
         <field name="sequence">12</field>
+        <field name="foldable">True</field>
     </record>
     <record id="flamant_bg_expr_retail_fr_omzet" model="account.report.expression">
         <field name="report_line_id" ref="flamant_bg_line_retail_fr"/>
         <field name="label">omzet</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.x_channel', '=', 'shops'), ('move_id.team_id.x_country_code', '=', 'FR')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'shops'), ('move_id.team_id.country_code', '=', 'FR')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_bg_expr_retail_fr_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_bg_line_retail_fr"/>
         <field name="label">cogs</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.x_channel', '=', 'shops'), ('move_id.team_id.x_country_code', '=', 'FR')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'shops'), ('move_id.team_id.country_code', '=', 'FR')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_bg_expr_retail_fr_marge" model="account.report.expression">
@@ -229,14 +231,14 @@
         <field name="report_line_id" ref="flamant_bg_line_ecom"/>
         <field name="label">omzet</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.x_channel', '=', 'ecommerce')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'ecommerce')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_bg_expr_ecom_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_bg_line_ecom"/>
         <field name="label">cogs</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.x_channel', '=', 'ecommerce')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'ecommerce')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_bg_expr_ecom_marge" model="account.report.expression">
@@ -265,14 +267,14 @@
         <field name="report_line_id" ref="flamant_bg_line_ecom_be"/>
         <field name="label">omzet</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.x_channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'BE')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'BE')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_bg_expr_ecom_be_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_bg_line_ecom_be"/>
         <field name="label">cogs</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.x_channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'BE')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'BE')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_bg_expr_ecom_be_marge" model="account.report.expression">
@@ -301,14 +303,14 @@
         <field name="report_line_id" ref="flamant_bg_line_ecom_fr"/>
         <field name="label">omzet</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.x_channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'FR')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'FR')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_bg_expr_ecom_fr_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_bg_line_ecom_fr"/>
         <field name="label">cogs</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.x_channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'FR')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'FR')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_bg_expr_ecom_fr_marge" model="account.report.expression">
@@ -332,6 +334,7 @@
         <field name="name">International</field>
         <field name="code">FLM_BU_ECOM_INT</field>
         <field name="sequence">23</field>
+        <field name="foldable">True</field>
     </record>
     <record id="flamant_bg_expr_ecom_int_omzet" model="account.report.expression">
         <field name="report_line_id" ref="flamant_bg_line_ecom_int"/>
@@ -371,14 +374,14 @@
         <field name="report_line_id" ref="flamant_bg_line_wholesale"/>
         <field name="label">omzet</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.x_channel', '=', 'wholesale')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'wholesale')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_bg_expr_wholesale_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_bg_line_wholesale"/>
         <field name="label">cogs</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.x_channel', '=', 'wholesale')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'wholesale')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_bg_expr_wholesale_marge" model="account.report.expression">
@@ -407,14 +410,14 @@
         <field name="report_line_id" ref="flamant_bg_line_other"/>
         <field name="label">omzet</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.x_channel', '=', 'outlet')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'outlet')]</field>
         <field name="subformula">-sum</field>
     </record>
     <record id="flamant_bg_expr_other_cogs" model="account.report.expression">
         <field name="report_line_id" ref="flamant_bg_line_other"/>
         <field name="label">cogs</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.x_channel', '=', 'outlet')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'outlet')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_bg_expr_other_marge" model="account.report.expression">
@@ -922,7 +925,7 @@
         <field name="report_line_id" ref="flamant_bg_line_retail"/>
         <field name="label">discount_eur</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Discount'), ('move_id.team_id.x_channel', '=', 'shops')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Discount'), ('move_id.team_id.channel', '=', 'shops')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_bg_expr_retail_discount_pct" model="account.report.expression">
@@ -937,7 +940,7 @@
         <field name="report_line_id" ref="flamant_bg_line_retail_be"/>
         <field name="label">discount_eur</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Discount'), ('move_id.team_id.x_channel', '=', 'shops'), ('move_id.team_id.x_country_code', '=', 'BE')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Discount'), ('move_id.team_id.channel', '=', 'shops'), ('move_id.team_id.country_code', '=', 'BE')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_bg_expr_retail_be_discount_pct" model="account.report.expression">
@@ -952,7 +955,7 @@
         <field name="report_line_id" ref="flamant_bg_line_retail_fr"/>
         <field name="label">discount_eur</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Discount'), ('move_id.team_id.x_channel', '=', 'shops'), ('move_id.team_id.x_country_code', '=', 'FR')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Discount'), ('move_id.team_id.channel', '=', 'shops'), ('move_id.team_id.country_code', '=', 'FR')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_bg_expr_retail_fr_discount_pct" model="account.report.expression">
@@ -967,7 +970,7 @@
         <field name="report_line_id" ref="flamant_bg_line_ecom"/>
         <field name="label">discount_eur</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Discount'), ('move_id.team_id.x_channel', '=', 'ecommerce')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Discount'), ('move_id.team_id.channel', '=', 'ecommerce')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_bg_expr_ecom_discount_pct" model="account.report.expression">
@@ -982,7 +985,7 @@
         <field name="report_line_id" ref="flamant_bg_line_ecom_be"/>
         <field name="label">discount_eur</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Discount'), ('move_id.team_id.x_channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'BE')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Discount'), ('move_id.team_id.channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'BE')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_bg_expr_ecom_be_discount_pct" model="account.report.expression">
@@ -997,7 +1000,7 @@
         <field name="report_line_id" ref="flamant_bg_line_ecom_fr"/>
         <field name="label">discount_eur</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Discount'), ('move_id.team_id.x_channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'FR')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Discount'), ('move_id.team_id.channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'FR')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_bg_expr_ecom_fr_discount_pct" model="account.report.expression">
@@ -1012,7 +1015,7 @@
         <field name="report_line_id" ref="flamant_bg_line_wholesale"/>
         <field name="label">discount_eur</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Discount'), ('move_id.team_id.x_channel', '=', 'wholesale')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Discount'), ('move_id.team_id.channel', '=', 'wholesale')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_bg_expr_wholesale_discount_pct" model="account.report.expression">
@@ -1027,7 +1030,7 @@
         <field name="report_line_id" ref="flamant_bg_line_other"/>
         <field name="label">discount_eur</field>
         <field name="engine">domain</field>
-        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Discount'), ('move_id.team_id.x_channel', '=', 'outlet')]</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Discount'), ('move_id.team_id.channel', '=', 'outlet')]</field>
         <field name="subformula">sum</field>
     </record>
     <record id="flamant_bg_expr_other_discount_pct" model="account.report.expression">

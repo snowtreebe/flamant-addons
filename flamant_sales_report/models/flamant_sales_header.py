@@ -1,7 +1,7 @@
 from odoo import api, fields, models, tools
 
 
-class FlamantDailySales(models.Model):
+class FlamantSalesHeader(models.Model):
     """Read-only consolidated view of POS orders, sale orders, and customer
     invoices. Each source record can emit up to two rows: one for order_intake
     and one for invoiced basis (POS orders emit both; sale orders only
@@ -12,7 +12,7 @@ class FlamantDailySales(models.Model):
     - crm_team.name is jsonb — extracted with ->>'en_US'.
     """
 
-    _name = 'flamant.daily.sales'
+    _name = 'flamant.sales.header'
     _description = 'Flamant Daily Sales (POS + Sale Orders + Invoices)'
     _auto = False
     _order = 'date desc'
@@ -60,6 +60,17 @@ class FlamantDailySales(models.Model):
     )
     shop_label = fields.Char(readonly=True)
     shop_cluster = fields.Char(readonly=True)
+    is_comparable = fields.Boolean(
+        string='Comparable',
+        readonly=True,
+        help='Mirrors crm.team.comparable — flag for like-for-like comparisons.',
+    )
+    analytic_account_id = fields.Many2one(
+        'account.analytic.account',
+        string='Budget Analytic Account',
+        readonly=True,
+        help='Mirrors crm.team.analytic_account_id.',
+    )
     source = fields.Selection(
         [
             ('pos',     'POS'),
@@ -97,7 +108,7 @@ class FlamantDailySales(models.Model):
                 r.source_doc = False
 
     def init(self):
-        """Create or replace the flamant_daily_sales PostgreSQL view.
+        """Create or replace the flamant_sales_header PostgreSQL view.
 
         Each source record emits rows depending on its type:
           - pos.order    → order_intake AND invoiced (cash sale covers both)
@@ -121,23 +132,25 @@ class FlamantDailySales(models.Model):
                     END AS weekday_num,
                     d.basis,
                     d.team_id,
-                    t.x_channel                                                    AS channel,
+                    t.channel                                                    AS channel,
                     -- For ecommerce, country comes from the customer (shipping
                     -- address). For all other channels, it stays the team's
                     -- shop country.
                     CASE
-                        WHEN t.x_channel IN ('ecommerce', 'wholesale') THEN
+                        WHEN t.channel IN ('ecommerce', 'wholesale') THEN
                             CASE
                                 WHEN pc.code = 'BE' THEN 'BE'
                                 WHEN pc.code = 'FR' THEN 'FR'
                                 WHEN pc.code IS NOT NULL THEN 'INT'
                                 ELSE 'OTHER'
                             END
-                        ELSE t.x_country_code
+                        ELSE t.country_code
                     END                                                            AS country_code,
-                    COALESCE(NULLIF(t.x_shop_label, ''), t.name->>'en_US')         AS shop_label,
-                    COALESCE(NULLIF(t.x_shop_cluster, ''), t.x_shop_label,
+                    COALESCE(NULLIF(t.shop_label, ''), t.name->>'en_US')         AS shop_label,
+                    COALESCE(NULLIF(t.shop_cluster, ''), t.shop_label,
                              t.name->>'en_US')                                     AS shop_cluster,
+                    COALESCE(t.comparable, FALSE)                                 AS is_comparable,
+                    t.analytic_account_id                                         AS analytic_account_id,
                     d.source,
                     d.amount_untaxed,
                     d.company_id,
