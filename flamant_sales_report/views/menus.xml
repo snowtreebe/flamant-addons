@@ -9,6 +9,12 @@
               action="action_flamant_quotation"
               sequence="10"/>
 
+    <menuitem id="menu_flamant_quotation_lines"
+              name="Quotation Lines"
+              parent="menu_flamant_orders_group"
+              action="action_flamant_quotation_line"
+              sequence="15"/>
+
     <menuitem id="menu_flamant_sales_header_intake"
               name="Order Intake"
               parent="menu_flamant_orders_group"

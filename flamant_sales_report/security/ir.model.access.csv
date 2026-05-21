@@ -11,3 +11,5 @@ access_flamant_bu_budget_user,flamant.bu.budget user,model_flamant_bu_budget,sal
 access_flamant_bu_budget_manager,flamant.bu.budget manager,model_flamant_bu_budget,sales_team.group_sale_manager,1,1,1,1
 access_flamant_sales_line_user,flamant.sales.line user,model_flamant_sales_line,sales_team.group_sale_salesman,1,0,0,0
 access_flamant_sales_line_manager,flamant.sales.line manager,model_flamant_sales_line,sales_team.group_sale_manager,1,0,0,0
+access_flamant_quotation_line_user,flamant.quotation.line user,model_flamant_quotation_line,sales_team.group_sale_salesman,1,0,0,0
+access_flamant_quotation_line_manager,flamant.quotation.line manager,model_flamant_quotation_line,sales_team.group_sale_manager,1,0,0,0

@@ -4,6 +4,7 @@ from . import pos_order_line
 from . import account_move_line
 from . import flamant_sales_header
 from . import flamant_quotation
+from . import flamant_quotation_line
 from . import flamant_shop_budget
 from . import flamant_monthly_budget
 from . import flamant_bu_budget

@@ -21,6 +21,7 @@
         'views/crm_team_views.xml',
         'views/flamant_sales_header_views.xml',
         'views/flamant_quotation_views.xml',
+        'views/flamant_quotation_line_views.xml',
         'views/flamant_shop_budget_views.xml',
         'views/flamant_monthly_budget_views.xml',
         'views/flamant_bu_budget_views.xml',

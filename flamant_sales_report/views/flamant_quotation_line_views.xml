@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Search -->
+    <record id="flamant_quotation_line_view_search" model="ir.ui.view">
+        <field name="name">flamant.quotation.line.search</field>
+        <field name="model">flamant.quotation.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="product_id"/>
+                <field name="product_categ_id"/>
+                <field name="source_ref" string="Reference"/>
+                <field name="team_id"/>
+                <field name="shop_label"/>
+                <field name="shop_cluster"/>
+                <field name="salesperson_id"/>
+                <field name="partner_id"/>
+                <separator/>
+                <filter name="comparable" string="Comparable shops only"
+                        domain="[('is_comparable','=',True)]"/>
+                <separator/>
+                <filter name="date_filter" string="Date" date="date"/>
+                <filter name="validity_filter" string="Validity" date="validity_date"/>
+                <group expand="1" string="Group By">
+                    <filter name="group_product"     string="Product"
+                            context="{'group_by':'product_id'}"/>
+                    <filter name="group_category"    string="Category"
+                            context="{'group_by':'product_categ_id'}"/>
+                    <filter name="group_channel"     string="Channel"
+                            context="{'group_by':'channel'}"/>
+                    <filter name="group_country"     string="Country"
+                            context="{'group_by':'country_code'}"/>
+                    <filter name="group_shop"        string="Shop"
+                            context="{'group_by':'shop_label'}"/>
+                    <filter name="group_cluster"     string="Shop Cluster"
+                            context="{'group_by':'shop_cluster'}"/>
+                    <filter name="group_team"        string="Sales Team"
+                            context="{'group_by':'team_id'}"/>
+                    <filter name="group_salesperson" string="Salesperson"
+                            context="{'group_by':'salesperson_id'}"/>
+                    <filter name="group_date_month"  string="Month"
+                            context="{'group_by':'date:month'}"/>
+                    <filter name="group_date_year"   string="Year"
+                            context="{'group_by':'date:year'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Pivot -->
+    <record id="flamant_quotation_line_view_pivot" model="ir.ui.view">
+        <field name="name">flamant.quotation.line.pivot</field>
+        <field name="model">flamant.quotation.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Quotation Lines">
+                <field name="qty"     type="measure"/>
+                <field name="revenue" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- List -->
+    <record id="flamant_quotation_line_view_list" model="ir.ui.view">
+        <field name="name">flamant.quotation.line.list</field>
+        <field name="model">flamant.quotation.line</field>
+        <field name="arch" type="xml">
+            <list string="Quotation Lines"
+                  create="false" delete="false" edit="false">
+                <field name="date"/>
+                <field name="source_doc" string="Quotation" widget="reference" readonly="1"/>
+                <field name="source_ref" string="Reference" optional="hide"/>
+                <field name="partner_id"        optional="show"/>
+                <field name="salesperson_id"    optional="show"/>
+                <field name="team_id"           optional="show"/>
+                <field name="channel"           optional="show"/>
+                <field name="country_code"      optional="hide"/>
+                <field name="shop_label"        optional="hide"/>
+                <field name="product_id"/>
+                <field name="product_categ_id"  optional="hide"/>
+                <field name="qty"     sum="Total Qty"/>
+                <field name="revenue" sum="Total Revenue"/>
+                <field name="validity_date"     optional="show"/>
+                <field name="currency_id" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Graph -->
+    <record id="flamant_quotation_line_view_graph" model="ir.ui.view">
+        <field name="name">flamant.quotation.line.graph</field>
+        <field name="model">flamant.quotation.line</field>
+        <field name="arch" type="xml">
+            <graph string="Quotation Lines" type="bar">
+                <field name="product_categ_id"/>
+                <field name="revenue" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_flamant_quotation_line" model="ir.actions.act_window">
+        <field name="name">Quotation Lines</field>
+        <field name="res_model">flamant.quotation.line</field>
+        <field name="view_mode">list,graph,pivot</field>
+        <field name="domain">[]</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No open quotations yet</p>
+            <p>Line-level pipeline of <b>sent</b> quotations. One row per
+               quotation line. Revenue only — no cost or margin
+               (quotations have no stock moves yet, so cost is undefined).</p>
+        </field>
+    </record>
+
+</odoo>
