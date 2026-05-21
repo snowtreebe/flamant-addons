@@ -120,6 +120,30 @@ Filter `cost_source = 'svl_actual'` in the pivot to see only fully-realised marg
 - **Like-for-like comparison**: `is_comparable = True` — only includes teams flagged
   as `comparable` on their `crm.team` form (same-store sales across periods).
 
+##### Original Order Date (new column)
+
+De datum waarop de klant zijn bestelling oorspronkelijk plaatste. Handig om verkopen te groeperen per maand waarin de **bestelling werd genoteerd**, los van wanneer ze later geleverd of gefactureerd werd.
+
+##### Dynamic Margin vs Locked Margin
+
+Twee versies van dezelfde marge, naast elkaar in het rapport:
+
+| Kolom | Wat het toont |
+|---|---|
+| **Dynamic Margin** | De marge zoals ze er **vandaag** uitziet. Als de inkoopprijs van een product later wijzigt, beweegt dit cijfer mee. |
+| **Locked Margin** | De marge zoals ze was **op het moment van de verkoop** (vastgezet). Dit cijfer blijft staan, ook al veranderen de inkoopprijzen later. |
+
+**Verschil tussen de twee = inkoopprijs-verschuiving na de verkoop.**
+
+- Locked groter dan dynamic → inkoopprijs is achteraf gestegen (we hebben minder marge dan we dachten).
+- Locked gelijk aan dynamic → geen verrassingen, kosten zijn stabiel gebleven.
+
+Achter de schermen vernieuwt het systeem de Locked Margin **elke nacht** voor de lopende maand, en **bevriest** ze definitief op de 1e van de volgende maand.
+
+##### Invoiced Sales Lines (new menu)
+
+Hetzelfde rapport als **Order Intake Lines**, maar gefilterd op **gefactureerde verkopen** in plaats van bestelde verkopen. Idem twee marge-kolommen.
+
 #### Budget model
 
 `flamant.bu.budget` — one row per (Business Unit × year × month), two free-edit
@@ -164,7 +188,8 @@ Flamant KPI
 │   ├── Quotations
 │   ├── Order Intake               (header-level, flamant.sales.header)
 │   ├── Order Intake Lines         (line-level, flamant.sales.line — incl. cost / margin)
-│   └── Invoiced Sales
+│   ├── Invoiced Sales
+│   └── Invoiced Sales Lines       (line-level, flamant.sales.line, basis=invoiced)
 ├── Marge Rapports ▼
 │   └── Per Business Unit          (GL-level, account.report)
 └── Budget ▼

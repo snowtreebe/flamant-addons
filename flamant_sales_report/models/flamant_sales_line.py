@@ -1,3 +1,5 @@
+from dateutil.relativedelta import relativedelta
+
 from odoo import api, fields, models, tools
 
 
@@ -114,7 +116,14 @@ class FlamantSalesLine(models.Model):
     qty = fields.Float(string='Quantity', readonly=True)
     revenue = fields.Monetary(string='Revenue', readonly=True)
     cost = fields.Monetary(string='Cost', readonly=True)
-    margin = fields.Monetary(string='Margin', readonly=True)
+    margin = fields.Monetary(string='Dynamic Margin', readonly=True)
+    margin_locked = fields.Monetary(
+        string='Locked Margin',
+        readonly=True,
+        help='Margin frozen by the locked-margin cron. Refreshed daily for the '
+             'current month; finalized on the 1st of the next month. NULL for '
+             'POS / invoice rows.',
+    )
     margin_pct = fields.Float(string='Margin %', readonly=True, aggregator=None)
     cost_source = fields.Selection(
         [
@@ -128,6 +137,15 @@ class FlamantSalesLine(models.Model):
 
     company_id = fields.Many2one('res.company', readonly=True)
     currency_id = fields.Many2one('res.currency', readonly=True)
+
+    # --- Order intake context (sale order lines + POS) ---
+    orderdate_split = fields.Datetime(
+        string='Original Order Date',
+        readonly=True,
+        help='For sale-order intake lines: orderdate_split from sale.order.line, '
+             'falling back to so.date_order when the line was not split. '
+             'For POS intake lines: po.date_order. NULL for invoiced rows.',
+    )
 
     @api.depends('source_model', 'source_id')
     def _compute_source_doc(self):
@@ -188,7 +206,9 @@ class FlamantSalesLine(models.Model):
                     END                                                           AS margin_pct,
                     d.cost_source,
                     d.company_id,
-                    rc.currency_id                                                AS currency_id
+                    rc.currency_id                                                AS currency_id,
+                    d.orderdate_split                                             AS orderdate_split,
+                    d.margin_locked                                               AS margin_locked
                 FROM (
                     -- ========================================================
                     -- LEG 1a: POS lines → order_intake basis
@@ -229,7 +249,9 @@ class FlamantSalesLine(models.Model):
                                     AND sm.product_id = pol.product_id
                             ) THEN 'svl_actual'
                             ELSE 'standard_price_fallback'
-                        END                                              AS cost_source
+                        END                                              AS cost_source,
+                        po.date_order                                    AS orderdate_split,
+                        pol.flamant_margin_locked                        AS margin_locked
                     FROM pos_order_line pol
                     JOIN pos_order        po ON po.id = pol.order_id
                     JOIN product_product  pp ON pp.id = pol.product_id
@@ -278,7 +300,9 @@ class FlamantSalesLine(models.Model):
                                     AND sm.product_id = pol.product_id
                             ) THEN 'svl_actual'
                             ELSE 'standard_price_fallback'
-                        END
+                        END,
+                        NULL::timestamp,
+                        pol.flamant_margin_locked
                     FROM pos_order_line pol
                     JOIN pos_order        po ON po.id = pol.order_id
                     JOIN product_product  pp ON pp.id = pol.product_id
@@ -324,7 +348,9 @@ class FlamantSalesLine(models.Model):
                                   WHERE sm.sale_line_id = sol.id
                             ) THEN 'svl_actual'
                             ELSE 'standard_price_fallback'
-                        END
+                        END,
+                        COALESCE(sol.orderdate_split, so.date_order),
+                        sol.flamant_margin_locked
                     FROM sale_order_line sol
                     JOIN sale_order       so ON so.id = sol.order_id
                     JOIN product_product  pp ON pp.id = sol.product_id
@@ -386,6 +412,11 @@ class FlamantSalesLine(models.Model):
                                   WHERE rel.invoice_line_id = aml.id
                             ) THEN 'svl_actual'
                             ELSE 'standard_price_fallback'
+                        END,
+                        NULL::timestamp,
+                        CASE WHEN am.move_type = 'out_refund'
+                             THEN -aml.flamant_margin_locked
+                             ELSE  aml.flamant_margin_locked
                         END
                     FROM account_move_line aml
                     JOIN account_move      am ON am.id = aml.move_id
@@ -410,3 +441,165 @@ class FlamantSalesLine(models.Model):
             )
             """
         )
+
+    # ------------------------------------------------------------------
+    # Locked-margin crons
+    # ------------------------------------------------------------------
+    # Snapshot the live margin per SO line into sale_order_line.flamant_margin_locked
+    # so that historical reports stop drifting when product costs change later.
+    #
+    # Two crons share the same SQL: only the date filter differs.
+    #   - Daily   → current month  (keeps the running month aligned with live data)
+    #   - Monthly → previous month (final freeze on the 1st of every month)
+    #
+    # After the monthly run, no cron touches that month's rows again, so the
+    # locked margin becomes the audit-grade reference for inkoop-drift analysis.
+
+    _LOCK_MARGIN_SO_SQL = """
+        UPDATE sale_order_line sol
+           SET flamant_margin_locked = COALESCE(sub.revenue, 0) - COALESCE(sub.cost, 0)
+          FROM (
+              SELECT
+                  sol.id AS sol_id,
+                  sol.price_subtotal AS revenue,
+                  CASE
+                      WHEN pt.type = 'service' THEN 0
+                      ELSE COALESCE(
+                          (SELECT -SUM(svl.value)
+                             FROM stock_valuation_layer svl
+                             JOIN stock_move sm ON sm.id = svl.stock_move_id
+                            WHERE sm.sale_line_id = sol.id),
+                          COALESCE((pp.standard_price ->> so.company_id::text)::numeric, 0)
+                              * sol.product_uom_qty
+                      )
+                  END AS cost
+                FROM sale_order_line sol
+                JOIN sale_order       so ON so.id = sol.order_id
+                JOIN product_product  pp ON pp.id = sol.product_id
+                JOIN product_template pt ON pt.id = pp.product_tmpl_id
+               WHERE so.state IN ('sale', 'done')
+                 AND so.team_id IS NOT NULL
+                 AND COALESCE(sol.is_downpayment, FALSE) = FALSE
+                 AND (sol.display_type IS NULL
+                      OR sol.display_type NOT IN ('line_section', 'line_note'))
+                 AND sol.product_id IS NOT NULL
+                 AND DATE_TRUNC('month', COALESCE(sol.orderdate_split, so.date_order))
+                       = DATE_TRUNC('month', %s::date)
+          ) sub
+         WHERE sol.id = sub.sol_id
+    """
+
+    _LOCK_MARGIN_POS_SQL = """
+        UPDATE pos_order_line pol
+           SET flamant_margin_locked = COALESCE(sub.revenue, 0) - COALESCE(sub.cost, 0)
+          FROM (
+              SELECT
+                  pol.id AS pol_id,
+                  pol.price_subtotal AS revenue,
+                  CASE
+                      WHEN pt.type = 'service' THEN 0
+                      ELSE COALESCE(
+                          (SELECT -SUM(svl.value)
+                             FROM stock_valuation_layer svl
+                             JOIN stock_move sm    ON sm.id = svl.stock_move_id
+                             JOIN stock_picking sp ON sp.id = sm.picking_id
+                            WHERE sp.pos_order_id = po.id
+                              AND sm.product_id = pol.product_id),
+                          COALESCE((pp.standard_price ->> po.company_id::text)::numeric, 0)
+                              * pol.qty
+                      )
+                  END AS cost
+                FROM pos_order_line  pol
+                JOIN pos_order        po ON po.id = pol.order_id
+                JOIN product_product  pp ON pp.id = pol.product_id
+                JOIN product_template pt ON pt.id = pp.product_tmpl_id
+               WHERE po.state NOT IN ('cancel', 'draft')
+                 AND po.crm_team_id IS NOT NULL
+                 AND pol.product_id IS NOT NULL
+                 AND DATE_TRUNC('month', po.date_order)
+                       = DATE_TRUNC('month', %s::date)
+          ) sub
+         WHERE pol.id = sub.pol_id
+    """
+
+    _LOCK_MARGIN_INVOICE_SQL = """
+        UPDATE account_move_line aml
+           SET flamant_margin_locked = COALESCE(sub.revenue, 0) - COALESCE(sub.cost, 0)
+          FROM (
+              SELECT
+                  aml.id AS aml_id,
+                  CASE WHEN am.move_type = 'out_refund'
+                       THEN -aml.price_subtotal
+                       ELSE  aml.price_subtotal
+                  END AS revenue,
+                  CASE
+                      WHEN pt.type = 'service' THEN 0
+                      ELSE (CASE WHEN am.move_type = 'out_refund' THEN -1 ELSE 1 END)
+                           * COALESCE(
+                               (SELECT -SUM(svl.value)
+                                  FROM stock_valuation_layer svl
+                                  JOIN stock_move sm ON sm.id = svl.stock_move_id
+                                  JOIN sale_order_line_invoice_rel rel
+                                       ON rel.order_line_id = sm.sale_line_id
+                                 WHERE rel.invoice_line_id = aml.id),
+                               COALESCE((pp.standard_price ->> am.company_id::text)::numeric, 0)
+                                   * aml.quantity
+                           )
+                  END AS cost
+                FROM account_move_line aml
+                JOIN account_move      am ON am.id = aml.move_id
+                JOIN product_product   pp ON pp.id = aml.product_id
+                JOIN product_template  pt ON pt.id = pp.product_tmpl_id
+               WHERE am.state = 'posted'
+                 AND am.move_type IN ('out_invoice', 'out_refund')
+                 AND am.team_id IS NOT NULL
+                 AND am.invoice_date IS NOT NULL
+                 AND aml.display_type = 'product'
+                 AND aml.product_id IS NOT NULL
+                 AND NOT EXISTS (
+                     SELECT 1 FROM pos_order po2 WHERE po2.account_move = am.id
+                 )
+                 AND DATE_TRUNC('month', am.invoice_date)
+                       = DATE_TRUNC('month', %s::date)
+          ) sub
+         WHERE aml.id = sub.aml_id
+    """
+
+    def _execute_lock_margin(self, anchor_date):
+        """Run SO + POS + invoice lock SQL for the given anchor date.
+
+        Returns total rows updated across all three tables.
+        """
+        self.env.cr.execute(self._LOCK_MARGIN_SO_SQL,      (anchor_date,))
+        so_rows = self.env.cr.rowcount
+        self.env.cr.execute(self._LOCK_MARGIN_POS_SQL,     (anchor_date,))
+        pos_rows = self.env.cr.rowcount
+        self.env.cr.execute(self._LOCK_MARGIN_INVOICE_SQL, (anchor_date,))
+        inv_rows = self.env.cr.rowcount
+        return so_rows + pos_rows + inv_rows
+
+    @api.model
+    def _cron_refresh_locked_margin_current_month(self):
+        """Daily: overwrite locked margin for SO + POS lines in the current month."""
+        return self._execute_lock_margin(fields.Date.today())
+
+    @api.model
+    def _cron_finalize_locked_margin_previous_month(self):
+        """Monthly (1st of month): final freeze of last month's locked margin (SO + POS)."""
+        today = fields.Date.today()
+        previous_month_anchor = (today.replace(day=1) - relativedelta(days=1)).replace(day=1)
+        return self._execute_lock_margin(previous_month_anchor)
+
+    @api.model
+    def _backfill_locked_margin(self, months_back=12):
+        """Manual helper: backfill locked margin for the last N months.
+
+        Used at install / migration time so historical rows already have a
+        locked value the first time the report is opened.
+        """
+        today = fields.Date.today()
+        total = 0
+        for offset in range(months_back, 0, -1):
+            anchor = (today.replace(day=1) - relativedelta(months=offset))
+            total += self._execute_lock_margin(anchor)
+        return total

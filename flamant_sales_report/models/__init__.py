@@ -1,4 +1,6 @@
 from . import crm_team
+from . import sale_order_line
+from . import pos_order_line
 from . import account_move_line
 from . import flamant_sales_header
 from . import flamant_quotation

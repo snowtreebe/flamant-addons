@@ -1,6 +1,6 @@
 {
     'name': 'Flamant KPI',
-    'version': '18.0.11.0.0',
+    'version': '18.0.12.0.0',
     'category': 'Sales/Sales',
     'summary': 'Consolidated POS + Sales KPI dashboard with channel / country / shop drilldown and margin reporting',
     'description': """Flamant KPI - Consolidated sales + margin reporting per channel/country/shop.""",
@@ -29,6 +29,7 @@
         'data/flamant_margin_report.xml',
         'data/flamant_account_tags.xml',
         'data/flamant_business_unit_report_grouped.xml',
+        'data/flamant_locked_margin_data.xml',
     ],
     'assets': {
         'web.assets_backend': [

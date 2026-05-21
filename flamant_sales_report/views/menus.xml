@@ -26,4 +26,10 @@
               parent="menu_flamant_orders_group"
               action="action_flamant_sales_header_invoiced"
               sequence="30"/>
+
+    <menuitem id="menu_flamant_invoiced_sales_lines"
+              name="Invoiced Sales Lines"
+              parent="menu_flamant_orders_group"
+              action="action_flamant_invoiced_sales_line"
+              sequence="35"/>
 </odoo>
