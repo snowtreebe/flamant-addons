@@ -1,0 +1,1350 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        ================================================================
+        Marge per Business Unit
+        ================================================================
+        Variant of flamant_bu_report with an extra supercolumn header
+        ("Actuals | Budgets") rendered via custom_columns_subheaders on the
+        flamant.bg.report.handler. Same lines & data, different layout.
+        Original layout had 4 columns: Omzet · COGS · Bruto Marge · % Marge
+          - Rows grouped per business unit (BU):
+              · Retail      (shops channel; split per country: BE / FR)
+              · Ecommerce   (split per partner country: BE / FR / INT)
+              · Wholesale   (single row)
+              · Other       (= Outlet channel, single row)
+              · TOTAAL
+          - Default opening date: this_month (toggle in UI)
+          - Budget overlay enabled (filter_budgets=True)
+
+        Country logic differs by BU:
+          - Retail country = team.country_code (shop's physical country)
+          - Ecommerce country = partner_shipping_id.country_id.code
+            (BE / FR explicitly; everything else lumped as INT)
+    -->
+
+    <record id="flamant_pj_report" model="account.report">
+        <field name="name">Marge per Business Unit PJ</field>
+        <field name="filter_date_range">True</field>
+        <field name="filter_period_comparison">True</field>
+        <field name="filter_budgets">False</field>
+        <field name="filter_growth_comparison">True</field>
+        <field name="filter_show_draft">True</field>
+        <field name="filter_unfold_all">True</field>
+        <field name="default_opening_date_filter">this_month</field>
+        <field name="custom_handler_model_id" ref="model_flamant_pj_report_handler"/>
+        <field name="column_ids">
+            <record id="flamant_pj_col_omzet" model="account.report.column">
+                <field name="name">Omzet</field>
+                <field name="expression_label">omzet</field>
+                <field name="figure_type">monetary</field>
+                <field name="sequence">1</field>
+            </record>
+            <record id="flamant_pj_col_cogs" model="account.report.column">
+                <field name="name">COGS</field>
+                <field name="expression_label">cogs</field>
+                <field name="figure_type">monetary</field>
+                <field name="sequence">2</field>
+            </record>
+            <record id="flamant_pj_col_marge" model="account.report.column">
+                <field name="name">Bruto Marge</field>
+                <field name="expression_label">marge</field>
+                <field name="figure_type">monetary</field>
+                <field name="sequence">3</field>
+            </record>
+            <record id="flamant_pj_col_pct" model="account.report.column">
+                <field name="name">% Bruto Marge</field>
+                <field name="expression_label">pct</field>
+                <field name="figure_type">percentage</field>
+                <field name="sequence">4</field>
+            </record>
+            <record id="flamant_pj_col_ooi" model="account.report.column">
+                <field name="name">Other Operating Income</field>
+                <field name="expression_label">ooi</field>
+                <field name="figure_type">monetary</field>
+                <field name="sequence">5</field>
+            </record>
+            <record id="flamant_pj_col_total_margin_eur" model="account.report.column">
+                <field name="name">Total Margin (€)</field>
+                <field name="expression_label">total_margin_eur</field>
+                <field name="figure_type">monetary</field>
+                <field name="sequence">6</field>
+            </record>
+            <record id="flamant_pj_col_total_margin_pct" model="account.report.column">
+                <field name="name">Total Margin (%)</field>
+                <field name="expression_label">total_margin_pct</field>
+                <field name="figure_type">percentage</field>
+                <field name="sequence">7</field>
+            </record>
+            <record id="flamant_pj_col_locked" model="account.report.column">
+                <field name="name">Locked Budget</field>
+                <field name="expression_label">locked_budget</field>
+                <field name="figure_type">monetary</field>
+                <field name="sequence">8</field>
+            </record>
+            <record id="flamant_pj_col_dlocked_eur" model="account.report.column">
+                <field name="name">Δ Locked (€)</field>
+                <field name="expression_label">delta_locked_eur</field>
+                <field name="figure_type">monetary</field>
+                <field name="sequence">9</field>
+            </record>
+            <record id="flamant_pj_col_dlocked_pct" model="account.report.column">
+                <field name="name">Δ Locked (%)</field>
+                <field name="expression_label">delta_locked_pct</field>
+                <field name="figure_type">percentage</field>
+                <field name="sequence">10</field>
+            </record>
+            <record id="flamant_pj_col_estimated" model="account.report.column">
+                <field name="name">Estimated Budget</field>
+                <field name="expression_label">estimated_budget</field>
+                <field name="figure_type">monetary</field>
+                <field name="sequence">11</field>
+            </record>
+            <record id="flamant_pj_col_destim_eur" model="account.report.column">
+                <field name="name">Δ Estimated (€)</field>
+                <field name="expression_label">delta_estimated_eur</field>
+                <field name="figure_type">monetary</field>
+                <field name="sequence">12</field>
+            </record>
+            <record id="flamant_pj_col_destim_pct" model="account.report.column">
+                <field name="name">Δ Estimated (%)</field>
+                <field name="expression_label">delta_estimated_pct</field>
+                <field name="figure_type">percentage</field>
+                <field name="sequence">13</field>
+            </record>
+        </field>
+    </record>
+
+    <!-- ============ RETAIL (Shops) ============ -->
+    <record id="flamant_pj_line_retail" model="account.report.line">
+        <field name="report_id" ref="flamant_pj_report"/>
+        <field name="name">Retail</field>
+        <field name="code">FLM_PJ_RETAIL</field>
+        <field name="sequence">10</field>
+        <field name="hierarchy_level">0</field>
+    </record>
+    <record id="flamant_pj_expr_retail_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail"/>
+        <field name="label">omzet</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'shops')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_retail_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail"/>
+        <field name="label">cogs</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'shops')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_pj_expr_retail_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail"/>
+        <field name="label">marge</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL.omzet - FLM_PJ_RETAIL.cogs</field>
+    </record>
+    <record id="flamant_pj_expr_retail_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail"/>
+        <field name="label">pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_PJ_RETAIL.marge / FLM_PJ_RETAIL.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- Retail / Belgium -->
+    <record id="flamant_pj_line_retail_be" model="account.report.line">
+        <field name="report_id" ref="flamant_pj_report"/>
+        <field name="parent_id" ref="flamant_pj_line_retail"/>
+        <field name="name">Belgium</field>
+        <field name="code">FLM_PJ_RETAIL_BE</field>
+        <field name="sequence">11</field>
+        <field name="foldable">True</field>
+    </record>
+    <record id="flamant_pj_expr_retail_be_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_be"/>
+        <field name="label">omzet</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'shops'), ('move_id.team_id.country_code', '=', 'BE')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_retail_be_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_be"/>
+        <field name="label">cogs</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'shops'), ('move_id.team_id.country_code', '=', 'BE')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_pj_expr_retail_be_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_be"/>
+        <field name="label">marge</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL_BE.omzet - FLM_PJ_RETAIL_BE.cogs</field>
+    </record>
+    <record id="flamant_pj_expr_retail_be_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_be"/>
+        <field name="label">pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_PJ_RETAIL_BE.marge / FLM_PJ_RETAIL_BE.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- Retail / France -->
+    <record id="flamant_pj_line_retail_fr" model="account.report.line">
+        <field name="report_id" ref="flamant_pj_report"/>
+        <field name="parent_id" ref="flamant_pj_line_retail"/>
+        <field name="name">France</field>
+        <field name="code">FLM_PJ_RETAIL_FR</field>
+        <field name="sequence">12</field>
+        <field name="foldable">True</field>
+    </record>
+    <record id="flamant_pj_expr_retail_fr_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_fr"/>
+        <field name="label">omzet</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'shops'), ('move_id.team_id.country_code', '=', 'FR')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_retail_fr_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_fr"/>
+        <field name="label">cogs</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'shops'), ('move_id.team_id.country_code', '=', 'FR')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_pj_expr_retail_fr_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_fr"/>
+        <field name="label">marge</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL_FR.omzet - FLM_PJ_RETAIL_FR.cogs</field>
+    </record>
+    <record id="flamant_pj_expr_retail_fr_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_fr"/>
+        <field name="label">pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_PJ_RETAIL_FR.marge / FLM_PJ_RETAIL_FR.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- ============ ECOMMERCE ============ -->
+    <record id="flamant_pj_line_ecom" model="account.report.line">
+        <field name="report_id" ref="flamant_pj_report"/>
+        <field name="name">Ecommerce</field>
+        <field name="code">FLM_PJ_ECOM</field>
+        <field name="sequence">20</field>
+        <field name="hierarchy_level">0</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom"/>
+        <field name="label">omzet</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'ecommerce')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom"/>
+        <field name="label">cogs</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'ecommerce')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom"/>
+        <field name="label">marge</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM.omzet - FLM_PJ_ECOM.cogs</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom"/>
+        <field name="label">pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_PJ_ECOM.marge / FLM_PJ_ECOM.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- Ecommerce / Belgium -->
+    <record id="flamant_pj_line_ecom_be" model="account.report.line">
+        <field name="report_id" ref="flamant_pj_report"/>
+        <field name="parent_id" ref="flamant_pj_line_ecom"/>
+        <field name="name">Belgium</field>
+        <field name="code">FLM_PJ_ECOM_BE</field>
+        <field name="sequence">21</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_be_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_be"/>
+        <field name="label">omzet</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'BE')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_be_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_be"/>
+        <field name="label">cogs</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'BE')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_be_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_be"/>
+        <field name="label">marge</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM_BE.omzet - FLM_PJ_ECOM_BE.cogs</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_be_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_be"/>
+        <field name="label">pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_PJ_ECOM_BE.marge / FLM_PJ_ECOM_BE.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- Ecommerce / France -->
+    <record id="flamant_pj_line_ecom_fr" model="account.report.line">
+        <field name="report_id" ref="flamant_pj_report"/>
+        <field name="parent_id" ref="flamant_pj_line_ecom"/>
+        <field name="name">France</field>
+        <field name="code">FLM_PJ_ECOM_FR</field>
+        <field name="sequence">22</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_fr_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_fr"/>
+        <field name="label">omzet</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'FR')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_fr_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_fr"/>
+        <field name="label">cogs</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'FR')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_fr_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_fr"/>
+        <field name="label">marge</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM_FR.omzet - FLM_PJ_ECOM_FR.cogs</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_fr_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_fr"/>
+        <field name="label">pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_PJ_ECOM_FR.marge / FLM_PJ_ECOM_FR.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- Ecommerce / International (everything that is not BE/FR, including no-country) -->
+    <record id="flamant_pj_line_ecom_int" model="account.report.line">
+        <field name="report_id" ref="flamant_pj_report"/>
+        <field name="parent_id" ref="flamant_pj_line_ecom"/>
+        <field name="name">International</field>
+        <field name="code">FLM_PJ_ECOM_INT</field>
+        <field name="sequence">23</field>
+        <field name="foldable">True</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_int_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_int"/>
+        <field name="label">omzet</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM.omzet - FLM_PJ_ECOM_BE.omzet - FLM_PJ_ECOM_FR.omzet</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_int_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_int"/>
+        <field name="label">cogs</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM.cogs - FLM_PJ_ECOM_BE.cogs - FLM_PJ_ECOM_FR.cogs</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_int_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_int"/>
+        <field name="label">marge</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM_INT.omzet - FLM_PJ_ECOM_INT.cogs</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_int_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_int"/>
+        <field name="label">pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_PJ_ECOM_INT.marge / FLM_PJ_ECOM_INT.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- ============ WHOLESALE ============ -->
+    <record id="flamant_pj_line_wholesale" model="account.report.line">
+        <field name="report_id" ref="flamant_pj_report"/>
+        <field name="name">Wholesale</field>
+        <field name="code">FLM_PJ_WHS</field>
+        <field name="sequence">30</field>
+        <field name="hierarchy_level">0</field>
+    </record>
+    <record id="flamant_pj_expr_wholesale_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_wholesale"/>
+        <field name="label">omzet</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'wholesale')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_wholesale_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_wholesale"/>
+        <field name="label">cogs</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'wholesale')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_pj_expr_wholesale_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_wholesale"/>
+        <field name="label">marge</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_WHS.omzet - FLM_PJ_WHS.cogs</field>
+    </record>
+    <record id="flamant_pj_expr_wholesale_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_wholesale"/>
+        <field name="label">pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_PJ_WHS.marge / FLM_PJ_WHS.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- Wholesale / Internal -->
+    <record id="flamant_pj_line_whs_int" model="account.report.line">
+        <field name="report_id" ref="flamant_pj_report"/>
+        <field name="parent_id" ref="flamant_pj_line_wholesale"/>
+        <field name="name">Wholesale - Internal</field>
+        <field name="code">FLM_PJ_WHS_INT</field>
+        <field name="sequence">31</field>
+    </record>
+    <record id="flamant_pj_expr_whs_int_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_int"/>
+        <field name="label">omzet</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'wholesale'), ('move_id.team_id.shop_cluster', '=', 'Wholesale - Internal')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_whs_int_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_int"/>
+        <field name="label">cogs</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'wholesale'), ('move_id.team_id.shop_cluster', '=', 'Wholesale - Internal')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_pj_expr_whs_int_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_int"/>
+        <field name="label">marge</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_WHS_INT.omzet - FLM_PJ_WHS_INT.cogs</field>
+    </record>
+    <record id="flamant_pj_expr_whs_int_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_int"/>
+        <field name="label">pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_PJ_WHS_INT.marge / FLM_PJ_WHS_INT.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+    <record id="flamant_pj_expr_whs_int_ooi" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_int"/>
+        <field name="label">ooi</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Other Operating Income'), ('move_id.team_id.channel', '=', 'wholesale'), ('move_id.team_id.shop_cluster', '=', 'Wholesale - Internal')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_whs_int_total_margin_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_int"/>
+        <field name="label">total_margin_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_WHS_INT.marge + FLM_PJ_WHS_INT.ooi</field>
+    </record>
+    <record id="flamant_pj_expr_whs_int_total_margin_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_int"/>
+        <field name="label">total_margin_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_WHS_INT.marge + FLM_PJ_WHS_INT.ooi) / FLM_PJ_WHS_INT.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+    <record id="flamant_pj_expr_whs_int_locked" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_int"/>
+        <field name="label">locked_budget</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">0</field>
+    </record>
+    <record id="flamant_pj_expr_whs_int_dlocked_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_int"/>
+        <field name="label">delta_locked_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_WHS_INT.omzet - FLM_PJ_WHS_INT.locked_budget</field>
+    </record>
+    <record id="flamant_pj_expr_whs_int_dlocked_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_int"/>
+        <field name="label">delta_locked_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_WHS_INT.omzet - FLM_PJ_WHS_INT.locked_budget) / FLM_PJ_WHS_INT.locked_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+    <record id="flamant_pj_expr_whs_int_estimated" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_int"/>
+        <field name="label">estimated_budget</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">0</field>
+    </record>
+    <record id="flamant_pj_expr_whs_int_destimated_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_int"/>
+        <field name="label">delta_estimated_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_WHS_INT.omzet - FLM_PJ_WHS_INT.estimated_budget</field>
+    </record>
+    <record id="flamant_pj_expr_whs_int_destimated_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_int"/>
+        <field name="label">delta_estimated_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_WHS_INT.omzet - FLM_PJ_WHS_INT.estimated_budget) / FLM_PJ_WHS_INT.estimated_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- Wholesale / Agent -->
+    <record id="flamant_pj_line_whs_agt" model="account.report.line">
+        <field name="report_id" ref="flamant_pj_report"/>
+        <field name="parent_id" ref="flamant_pj_line_wholesale"/>
+        <field name="name">Wholesale - Agent</field>
+        <field name="code">FLM_PJ_WHS_AGT</field>
+        <field name="sequence">32</field>
+    </record>
+    <record id="flamant_pj_expr_whs_agt_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_agt"/>
+        <field name="label">omzet</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'wholesale'), ('move_id.team_id.shop_cluster', '=', 'Wholesale - Agent')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_whs_agt_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_agt"/>
+        <field name="label">cogs</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'wholesale'), ('move_id.team_id.shop_cluster', '=', 'Wholesale - Agent')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_pj_expr_whs_agt_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_agt"/>
+        <field name="label">marge</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_WHS_AGT.omzet - FLM_PJ_WHS_AGT.cogs</field>
+    </record>
+    <record id="flamant_pj_expr_whs_agt_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_agt"/>
+        <field name="label">pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_PJ_WHS_AGT.marge / FLM_PJ_WHS_AGT.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+    <record id="flamant_pj_expr_whs_agt_ooi" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_agt"/>
+        <field name="label">ooi</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Other Operating Income'), ('move_id.team_id.channel', '=', 'wholesale'), ('move_id.team_id.shop_cluster', '=', 'Wholesale - Agent')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_whs_agt_total_margin_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_agt"/>
+        <field name="label">total_margin_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_WHS_AGT.marge + FLM_PJ_WHS_AGT.ooi</field>
+    </record>
+    <record id="flamant_pj_expr_whs_agt_total_margin_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_agt"/>
+        <field name="label">total_margin_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_WHS_AGT.marge + FLM_PJ_WHS_AGT.ooi) / FLM_PJ_WHS_AGT.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+    <record id="flamant_pj_expr_whs_agt_locked" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_agt"/>
+        <field name="label">locked_budget</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">0</field>
+    </record>
+    <record id="flamant_pj_expr_whs_agt_dlocked_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_agt"/>
+        <field name="label">delta_locked_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_WHS_AGT.omzet - FLM_PJ_WHS_AGT.locked_budget</field>
+    </record>
+    <record id="flamant_pj_expr_whs_agt_dlocked_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_agt"/>
+        <field name="label">delta_locked_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_WHS_AGT.omzet - FLM_PJ_WHS_AGT.locked_budget) / FLM_PJ_WHS_AGT.locked_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+    <record id="flamant_pj_expr_whs_agt_estimated" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_agt"/>
+        <field name="label">estimated_budget</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">0</field>
+    </record>
+    <record id="flamant_pj_expr_whs_agt_destimated_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_agt"/>
+        <field name="label">delta_estimated_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_WHS_AGT.omzet - FLM_PJ_WHS_AGT.estimated_budget</field>
+    </record>
+    <record id="flamant_pj_expr_whs_agt_destimated_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_whs_agt"/>
+        <field name="label">delta_estimated_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_WHS_AGT.omzet - FLM_PJ_WHS_AGT.estimated_budget) / FLM_PJ_WHS_AGT.estimated_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- ============ OTHER (Outlet) ============ -->
+    <record id="flamant_pj_line_other" model="account.report.line">
+        <field name="report_id" ref="flamant_pj_report"/>
+        <field name="name">Other (Outlet)</field>
+        <field name="code">FLM_PJ_OTHER</field>
+        <field name="sequence">40</field>
+        <field name="hierarchy_level">0</field>
+    </record>
+    <record id="flamant_pj_expr_other_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_other"/>
+        <field name="label">omzet</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Omzet'), ('move_id.team_id.channel', '=', 'outlet')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_other_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_other"/>
+        <field name="label">cogs</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant COGS'), ('move_id.team_id.channel', '=', 'outlet')]</field>
+        <field name="subformula">sum</field>
+    </record>
+    <record id="flamant_pj_expr_other_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_other"/>
+        <field name="label">marge</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_OTHER.omzet - FLM_PJ_OTHER.cogs</field>
+    </record>
+    <record id="flamant_pj_expr_other_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_other"/>
+        <field name="label">pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_PJ_OTHER.marge / FLM_PJ_OTHER.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- ============ TOTAAL ============ -->
+    <record id="flamant_pj_line_total" model="account.report.line">
+        <field name="report_id" ref="flamant_pj_report"/>
+        <field name="name">TOTAAL</field>
+        <field name="code">FLM_PJ_TOTAL</field>
+        <field name="sequence">100</field>
+        <field name="hierarchy_level">0</field>
+    </record>
+    <record id="flamant_pj_expr_total_omzet" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_total"/>
+        <field name="label">omzet</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL.omzet + FLM_PJ_ECOM.omzet + FLM_PJ_WHS.omzet + FLM_PJ_OTHER.omzet</field>
+    </record>
+    <record id="flamant_pj_expr_total_cogs" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_total"/>
+        <field name="label">cogs</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL.cogs + FLM_PJ_ECOM.cogs + FLM_PJ_WHS.cogs + FLM_PJ_OTHER.cogs</field>
+    </record>
+    <record id="flamant_pj_expr_total_marge" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_total"/>
+        <field name="label">marge</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_TOTAL.omzet - FLM_PJ_TOTAL.cogs</field>
+    </record>
+    <record id="flamant_pj_expr_total_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_total"/>
+        <field name="label">pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * FLM_PJ_TOTAL.marge / FLM_PJ_TOTAL.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- ============================================================
+         BUDGET EXPRESSIONS (Locked + Estimated)
+         ============================================================
+         Leaf rows: engine='custom', subformula = BU code from
+                    flamant.bu.budget.business_unit selection.
+         Parent rows: engine='aggregation' over leaves.
+         All values come from flamant.bu.budget filtered on the
+         report's date range. -->
+
+    <!-- Retail / Belgium -->
+    <record id="flamant_pj_expr_retail_be_locked" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_be"/>
+        <field name="label">locked_budget</field>
+        <field name="engine">custom</field>
+        <field name="formula">_report_custom_engine_flamant_bu_locked</field>
+        <field name="subformula">retail_be</field>
+    </record>
+    <record id="flamant_pj_expr_retail_be_estimated" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_be"/>
+        <field name="label">estimated_budget</field>
+        <field name="engine">custom</field>
+        <field name="formula">_report_custom_engine_flamant_bu_estimated</field>
+        <field name="subformula">retail_be</field>
+    </record>
+
+    <!-- Retail / France -->
+    <record id="flamant_pj_expr_retail_fr_locked" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_fr"/>
+        <field name="label">locked_budget</field>
+        <field name="engine">custom</field>
+        <field name="formula">_report_custom_engine_flamant_bu_locked</field>
+        <field name="subformula">retail_fr</field>
+    </record>
+    <record id="flamant_pj_expr_retail_fr_estimated" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_fr"/>
+        <field name="label">estimated_budget</field>
+        <field name="engine">custom</field>
+        <field name="formula">_report_custom_engine_flamant_bu_estimated</field>
+        <field name="subformula">retail_fr</field>
+    </record>
+
+    <!-- Retail (parent rollup) -->
+    <record id="flamant_pj_expr_retail_locked" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail"/>
+        <field name="label">locked_budget</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL_BE.locked_budget + FLM_PJ_RETAIL_FR.locked_budget</field>
+    </record>
+    <record id="flamant_pj_expr_retail_estimated" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail"/>
+        <field name="label">estimated_budget</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL_BE.estimated_budget + FLM_PJ_RETAIL_FR.estimated_budget</field>
+    </record>
+
+    <!-- Ecommerce / Belgium -->
+    <record id="flamant_pj_expr_ecom_be_locked" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_be"/>
+        <field name="label">locked_budget</field>
+        <field name="engine">custom</field>
+        <field name="formula">_report_custom_engine_flamant_bu_locked</field>
+        <field name="subformula">ecom_be</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_be_estimated" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_be"/>
+        <field name="label">estimated_budget</field>
+        <field name="engine">custom</field>
+        <field name="formula">_report_custom_engine_flamant_bu_estimated</field>
+        <field name="subformula">ecom_be</field>
+    </record>
+
+    <!-- Ecommerce / France -->
+    <record id="flamant_pj_expr_ecom_fr_locked" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_fr"/>
+        <field name="label">locked_budget</field>
+        <field name="engine">custom</field>
+        <field name="formula">_report_custom_engine_flamant_bu_locked</field>
+        <field name="subformula">ecom_fr</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_fr_estimated" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_fr"/>
+        <field name="label">estimated_budget</field>
+        <field name="engine">custom</field>
+        <field name="formula">_report_custom_engine_flamant_bu_estimated</field>
+        <field name="subformula">ecom_fr</field>
+    </record>
+
+    <!-- Ecommerce / International -->
+    <record id="flamant_pj_expr_ecom_int_locked" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_int"/>
+        <field name="label">locked_budget</field>
+        <field name="engine">custom</field>
+        <field name="formula">_report_custom_engine_flamant_bu_locked</field>
+        <field name="subformula">ecom_int</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_int_estimated" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_int"/>
+        <field name="label">estimated_budget</field>
+        <field name="engine">custom</field>
+        <field name="formula">_report_custom_engine_flamant_bu_estimated</field>
+        <field name="subformula">ecom_int</field>
+    </record>
+
+    <!-- Ecommerce (parent rollup) -->
+    <record id="flamant_pj_expr_ecom_locked" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom"/>
+        <field name="label">locked_budget</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM_BE.locked_budget + FLM_PJ_ECOM_FR.locked_budget + FLM_PJ_ECOM_INT.locked_budget</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_estimated" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom"/>
+        <field name="label">estimated_budget</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM_BE.estimated_budget + FLM_PJ_ECOM_FR.estimated_budget + FLM_PJ_ECOM_INT.estimated_budget</field>
+    </record>
+
+    <!-- Wholesale (single leaf) -->
+    <record id="flamant_pj_expr_wholesale_locked" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_wholesale"/>
+        <field name="label">locked_budget</field>
+        <field name="engine">custom</field>
+        <field name="formula">_report_custom_engine_flamant_bu_locked</field>
+        <field name="subformula">wholesale</field>
+    </record>
+    <record id="flamant_pj_expr_wholesale_estimated" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_wholesale"/>
+        <field name="label">estimated_budget</field>
+        <field name="engine">custom</field>
+        <field name="formula">_report_custom_engine_flamant_bu_estimated</field>
+        <field name="subformula">wholesale</field>
+    </record>
+
+    <!-- Other / Outlet (single leaf) -->
+    <record id="flamant_pj_expr_other_locked" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_other"/>
+        <field name="label">locked_budget</field>
+        <field name="engine">custom</field>
+        <field name="formula">_report_custom_engine_flamant_bu_locked</field>
+        <field name="subformula">other</field>
+    </record>
+    <record id="flamant_pj_expr_other_estimated" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_other"/>
+        <field name="label">estimated_budget</field>
+        <field name="engine">custom</field>
+        <field name="formula">_report_custom_engine_flamant_bu_estimated</field>
+        <field name="subformula">other</field>
+    </record>
+
+    <!-- TOTAAL -->
+    <record id="flamant_pj_expr_total_locked" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_total"/>
+        <field name="label">locked_budget</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL.locked_budget + FLM_PJ_ECOM.locked_budget + FLM_PJ_WHS.locked_budget + FLM_PJ_OTHER.locked_budget</field>
+    </record>
+    <record id="flamant_pj_expr_total_estimated" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_total"/>
+        <field name="label">estimated_budget</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL.estimated_budget + FLM_PJ_ECOM.estimated_budget + FLM_PJ_WHS.estimated_budget + FLM_PJ_OTHER.estimated_budget</field>
+    </record>
+
+    <!-- ============================================================
+         DELTA EXPRESSIONS (Omzet vs Budget)
+         ============================================================
+         All aggregation engine, computed on the SAME row using its
+         own omzet + budget expressions. -->
+
+    <!-- FLM_PJ_RETAIL deltas -->
+    <record id="flamant_pj_expr_retail_dlocked_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail"/>
+        <field name="label">delta_locked_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL.omzet - FLM_PJ_RETAIL.locked_budget</field>
+    </record>
+    <record id="flamant_pj_expr_retail_dlocked_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail"/>
+        <field name="label">delta_locked_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_RETAIL.omzet - FLM_PJ_RETAIL.locked_budget) / FLM_PJ_RETAIL.locked_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+    <record id="flamant_pj_expr_retail_destim_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail"/>
+        <field name="label">delta_estimated_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL.omzet - FLM_PJ_RETAIL.estimated_budget</field>
+    </record>
+    <record id="flamant_pj_expr_retail_destim_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail"/>
+        <field name="label">delta_estimated_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_RETAIL.omzet - FLM_PJ_RETAIL.estimated_budget) / FLM_PJ_RETAIL.estimated_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- FLM_PJ_RETAIL_BE deltas -->
+    <record id="flamant_pj_expr_retail_be_dlocked_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_be"/>
+        <field name="label">delta_locked_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL_BE.omzet - FLM_PJ_RETAIL_BE.locked_budget</field>
+    </record>
+    <record id="flamant_pj_expr_retail_be_dlocked_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_be"/>
+        <field name="label">delta_locked_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_RETAIL_BE.omzet - FLM_PJ_RETAIL_BE.locked_budget) / FLM_PJ_RETAIL_BE.locked_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+    <record id="flamant_pj_expr_retail_be_destim_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_be"/>
+        <field name="label">delta_estimated_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL_BE.omzet - FLM_PJ_RETAIL_BE.estimated_budget</field>
+    </record>
+    <record id="flamant_pj_expr_retail_be_destim_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_be"/>
+        <field name="label">delta_estimated_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_RETAIL_BE.omzet - FLM_PJ_RETAIL_BE.estimated_budget) / FLM_PJ_RETAIL_BE.estimated_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- FLM_PJ_RETAIL_FR deltas -->
+    <record id="flamant_pj_expr_retail_fr_dlocked_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_fr"/>
+        <field name="label">delta_locked_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL_FR.omzet - FLM_PJ_RETAIL_FR.locked_budget</field>
+    </record>
+    <record id="flamant_pj_expr_retail_fr_dlocked_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_fr"/>
+        <field name="label">delta_locked_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_RETAIL_FR.omzet - FLM_PJ_RETAIL_FR.locked_budget) / FLM_PJ_RETAIL_FR.locked_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+    <record id="flamant_pj_expr_retail_fr_destim_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_fr"/>
+        <field name="label">delta_estimated_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL_FR.omzet - FLM_PJ_RETAIL_FR.estimated_budget</field>
+    </record>
+    <record id="flamant_pj_expr_retail_fr_destim_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_fr"/>
+        <field name="label">delta_estimated_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_RETAIL_FR.omzet - FLM_PJ_RETAIL_FR.estimated_budget) / FLM_PJ_RETAIL_FR.estimated_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- FLM_PJ_ECOM deltas -->
+    <record id="flamant_pj_expr_ecom_dlocked_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom"/>
+        <field name="label">delta_locked_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM.omzet - FLM_PJ_ECOM.locked_budget</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_dlocked_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom"/>
+        <field name="label">delta_locked_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_ECOM.omzet - FLM_PJ_ECOM.locked_budget) / FLM_PJ_ECOM.locked_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_destim_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom"/>
+        <field name="label">delta_estimated_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM.omzet - FLM_PJ_ECOM.estimated_budget</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_destim_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom"/>
+        <field name="label">delta_estimated_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_ECOM.omzet - FLM_PJ_ECOM.estimated_budget) / FLM_PJ_ECOM.estimated_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- FLM_PJ_ECOM_BE deltas -->
+    <record id="flamant_pj_expr_ecom_be_dlocked_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_be"/>
+        <field name="label">delta_locked_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM_BE.omzet - FLM_PJ_ECOM_BE.locked_budget</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_be_dlocked_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_be"/>
+        <field name="label">delta_locked_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_ECOM_BE.omzet - FLM_PJ_ECOM_BE.locked_budget) / FLM_PJ_ECOM_BE.locked_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_be_destim_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_be"/>
+        <field name="label">delta_estimated_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM_BE.omzet - FLM_PJ_ECOM_BE.estimated_budget</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_be_destim_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_be"/>
+        <field name="label">delta_estimated_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_ECOM_BE.omzet - FLM_PJ_ECOM_BE.estimated_budget) / FLM_PJ_ECOM_BE.estimated_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- FLM_PJ_ECOM_FR deltas -->
+    <record id="flamant_pj_expr_ecom_fr_dlocked_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_fr"/>
+        <field name="label">delta_locked_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM_FR.omzet - FLM_PJ_ECOM_FR.locked_budget</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_fr_dlocked_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_fr"/>
+        <field name="label">delta_locked_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_ECOM_FR.omzet - FLM_PJ_ECOM_FR.locked_budget) / FLM_PJ_ECOM_FR.locked_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_fr_destim_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_fr"/>
+        <field name="label">delta_estimated_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM_FR.omzet - FLM_PJ_ECOM_FR.estimated_budget</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_fr_destim_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_fr"/>
+        <field name="label">delta_estimated_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_ECOM_FR.omzet - FLM_PJ_ECOM_FR.estimated_budget) / FLM_PJ_ECOM_FR.estimated_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- FLM_PJ_ECOM_INT deltas -->
+    <record id="flamant_pj_expr_ecom_int_dlocked_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_int"/>
+        <field name="label">delta_locked_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM_INT.omzet - FLM_PJ_ECOM_INT.locked_budget</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_int_dlocked_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_int"/>
+        <field name="label">delta_locked_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_ECOM_INT.omzet - FLM_PJ_ECOM_INT.locked_budget) / FLM_PJ_ECOM_INT.locked_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_int_destim_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_int"/>
+        <field name="label">delta_estimated_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM_INT.omzet - FLM_PJ_ECOM_INT.estimated_budget</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_int_destim_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_int"/>
+        <field name="label">delta_estimated_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_ECOM_INT.omzet - FLM_PJ_ECOM_INT.estimated_budget) / FLM_PJ_ECOM_INT.estimated_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- FLM_PJ_WHS deltas -->
+    <record id="flamant_pj_expr_wholesale_dlocked_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_wholesale"/>
+        <field name="label">delta_locked_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_WHS.omzet - FLM_PJ_WHS.locked_budget</field>
+    </record>
+    <record id="flamant_pj_expr_wholesale_dlocked_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_wholesale"/>
+        <field name="label">delta_locked_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_WHS.omzet - FLM_PJ_WHS.locked_budget) / FLM_PJ_WHS.locked_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+    <record id="flamant_pj_expr_wholesale_destim_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_wholesale"/>
+        <field name="label">delta_estimated_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_WHS.omzet - FLM_PJ_WHS.estimated_budget</field>
+    </record>
+    <record id="flamant_pj_expr_wholesale_destim_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_wholesale"/>
+        <field name="label">delta_estimated_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_WHS.omzet - FLM_PJ_WHS.estimated_budget) / FLM_PJ_WHS.estimated_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- FLM_PJ_OTHER deltas -->
+    <record id="flamant_pj_expr_other_dlocked_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_other"/>
+        <field name="label">delta_locked_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_OTHER.omzet - FLM_PJ_OTHER.locked_budget</field>
+    </record>
+    <record id="flamant_pj_expr_other_dlocked_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_other"/>
+        <field name="label">delta_locked_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_OTHER.omzet - FLM_PJ_OTHER.locked_budget) / FLM_PJ_OTHER.locked_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+    <record id="flamant_pj_expr_other_destim_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_other"/>
+        <field name="label">delta_estimated_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_OTHER.omzet - FLM_PJ_OTHER.estimated_budget</field>
+    </record>
+    <record id="flamant_pj_expr_other_destim_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_other"/>
+        <field name="label">delta_estimated_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_OTHER.omzet - FLM_PJ_OTHER.estimated_budget) / FLM_PJ_OTHER.estimated_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- FLM_PJ_TOTAL deltas -->
+    <record id="flamant_pj_expr_total_dlocked_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_total"/>
+        <field name="label">delta_locked_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_TOTAL.omzet - FLM_PJ_TOTAL.locked_budget</field>
+    </record>
+    <record id="flamant_pj_expr_total_dlocked_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_total"/>
+        <field name="label">delta_locked_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_TOTAL.omzet - FLM_PJ_TOTAL.locked_budget) / FLM_PJ_TOTAL.locked_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+    <record id="flamant_pj_expr_total_destim_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_total"/>
+        <field name="label">delta_estimated_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_TOTAL.omzet - FLM_PJ_TOTAL.estimated_budget</field>
+    </record>
+    <record id="flamant_pj_expr_total_destim_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_total"/>
+        <field name="label">delta_estimated_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_TOTAL.omzet - FLM_PJ_TOTAL.estimated_budget) / FLM_PJ_TOTAL.estimated_budget</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+
+    <!-- ============================================================
+         DISCOUNT EXPRESSIONS (positive = amount discounted)
+         ============================================================ -->
+
+    <!-- Ecom / International (aggregation) -->
+
+    <!-- TOTAAL (aggregation) -->
+
+    <!-- =====================================================
+         OOI + TOTAL MARGIN EXPRESSIONS (PJ variant)
+         ===================================================== -->
+
+    <record id="flamant_pj_expr_retail_ooi" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail"/>
+        <field name="label">ooi</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Other Operating Income'), ('move_id.team_id.channel', '=', 'shops')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_retail_total_margin_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail"/>
+        <field name="label">total_margin_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL.marge + FLM_PJ_RETAIL.ooi</field>
+    </record>
+    <record id="flamant_pj_expr_retail_total_margin_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail"/>
+        <field name="label">total_margin_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_RETAIL.marge + FLM_PJ_RETAIL.ooi) / FLM_PJ_RETAIL.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <record id="flamant_pj_expr_retail_be_ooi" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_be"/>
+        <field name="label">ooi</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Other Operating Income'), ('move_id.team_id.channel', '=', 'shops'), ('move_id.team_id.country_code', '=', 'BE')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_retail_be_total_margin_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_be"/>
+        <field name="label">total_margin_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL_BE.marge + FLM_PJ_RETAIL_BE.ooi</field>
+    </record>
+    <record id="flamant_pj_expr_retail_be_total_margin_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_be"/>
+        <field name="label">total_margin_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_RETAIL_BE.marge + FLM_PJ_RETAIL_BE.ooi) / FLM_PJ_RETAIL_BE.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <record id="flamant_pj_expr_retail_fr_ooi" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_fr"/>
+        <field name="label">ooi</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Other Operating Income'), ('move_id.team_id.channel', '=', 'shops'), ('move_id.team_id.country_code', '=', 'FR')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_retail_fr_total_margin_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_fr"/>
+        <field name="label">total_margin_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL_FR.marge + FLM_PJ_RETAIL_FR.ooi</field>
+    </record>
+    <record id="flamant_pj_expr_retail_fr_total_margin_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_retail_fr"/>
+        <field name="label">total_margin_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_RETAIL_FR.marge + FLM_PJ_RETAIL_FR.ooi) / FLM_PJ_RETAIL_FR.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <record id="flamant_pj_expr_ecom_ooi" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom"/>
+        <field name="label">ooi</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Other Operating Income'), ('move_id.team_id.channel', '=', 'ecommerce')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_total_margin_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom"/>
+        <field name="label">total_margin_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM.marge + FLM_PJ_ECOM.ooi</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_total_margin_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom"/>
+        <field name="label">total_margin_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_ECOM.marge + FLM_PJ_ECOM.ooi) / FLM_PJ_ECOM.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <record id="flamant_pj_expr_ecom_be_ooi" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_be"/>
+        <field name="label">ooi</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Other Operating Income'), ('move_id.team_id.channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'BE')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_be_total_margin_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_be"/>
+        <field name="label">total_margin_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM_BE.marge + FLM_PJ_ECOM_BE.ooi</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_be_total_margin_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_be"/>
+        <field name="label">total_margin_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_ECOM_BE.marge + FLM_PJ_ECOM_BE.ooi) / FLM_PJ_ECOM_BE.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <record id="flamant_pj_expr_ecom_fr_ooi" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_fr"/>
+        <field name="label">ooi</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Other Operating Income'), ('move_id.team_id.channel', '=', 'ecommerce'), ('move_id.partner_shipping_id.country_id.code', '=', 'FR')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_fr_total_margin_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_fr"/>
+        <field name="label">total_margin_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM_FR.marge + FLM_PJ_ECOM_FR.ooi</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_fr_total_margin_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_fr"/>
+        <field name="label">total_margin_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_ECOM_FR.marge + FLM_PJ_ECOM_FR.ooi) / FLM_PJ_ECOM_FR.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <record id="flamant_pj_expr_wholesale_ooi" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_wholesale"/>
+        <field name="label">ooi</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Other Operating Income'), ('move_id.team_id.channel', '=', 'wholesale')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_wholesale_total_margin_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_wholesale"/>
+        <field name="label">total_margin_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_WHS.marge + FLM_PJ_WHS.ooi</field>
+    </record>
+    <record id="flamant_pj_expr_wholesale_total_margin_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_wholesale"/>
+        <field name="label">total_margin_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_WHS.marge + FLM_PJ_WHS.ooi) / FLM_PJ_WHS.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <record id="flamant_pj_expr_other_ooi" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_other"/>
+        <field name="label">ooi</field>
+        <field name="engine">domain</field>
+        <field name="formula">[('account_id.tag_ids.name', '=', 'Flamant Other Operating Income'), ('move_id.team_id.channel', '=', 'outlet')]</field>
+        <field name="subformula">-sum</field>
+    </record>
+    <record id="flamant_pj_expr_other_total_margin_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_other"/>
+        <field name="label">total_margin_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_OTHER.marge + FLM_PJ_OTHER.ooi</field>
+    </record>
+    <record id="flamant_pj_expr_other_total_margin_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_other"/>
+        <field name="label">total_margin_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_OTHER.marge + FLM_PJ_OTHER.ooi) / FLM_PJ_OTHER.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- Ecom / International -->
+    <record id="flamant_pj_expr_ecom_int_ooi" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_int"/>
+        <field name="label">ooi</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM.ooi - FLM_PJ_ECOM_BE.ooi - FLM_PJ_ECOM_FR.ooi</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_int_total_margin_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_int"/>
+        <field name="label">total_margin_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_ECOM_INT.marge + FLM_PJ_ECOM_INT.ooi</field>
+    </record>
+    <record id="flamant_pj_expr_ecom_int_total_margin_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_ecom_int"/>
+        <field name="label">total_margin_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_ECOM_INT.marge + FLM_PJ_ECOM_INT.ooi) / FLM_PJ_ECOM_INT.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- TOTAAL -->
+    <record id="flamant_pj_expr_total_ooi" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_total"/>
+        <field name="label">ooi</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_RETAIL.ooi + FLM_PJ_ECOM.ooi + FLM_PJ_WHS.ooi + FLM_PJ_OTHER.ooi</field>
+    </record>
+    <record id="flamant_pj_expr_total_total_margin_eur" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_total"/>
+        <field name="label">total_margin_eur</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">FLM_PJ_TOTAL.marge + FLM_PJ_TOTAL.ooi</field>
+    </record>
+    <record id="flamant_pj_expr_total_total_margin_pct" model="account.report.expression">
+        <field name="report_line_id" ref="flamant_pj_line_total"/>
+        <field name="label">total_margin_pct</field>
+        <field name="engine">aggregation</field>
+        <field name="formula">100 * (FLM_PJ_TOTAL.marge + FLM_PJ_TOTAL.ooi) / FLM_PJ_TOTAL.omzet</field>
+        <field name="subformula">ignore_zero_division</field>
+    </record>
+
+    <!-- Action + menu -->
+    <record id="flamant_pj_report_action" model="ir.actions.client">
+        <field name="name">Marge per Business Unit PJ</field>
+        <field name="tag">account_report</field>
+        <field name="context" eval="{'report_id': ref('flamant_pj_report')}"/>
+    </record>
+
+    <menuitem id="menu_flamant_pj_report"
+              name="Per Business Unit"
+              parent="menu_flamant_marge_group"
+              action="flamant_pj_report_action"
+              sequence="40"/>
+</odoo>
+

@@ -1079,7 +1079,7 @@
     </record>
 
     <menuitem id="menu_flamant_bg_report"
-              name="Per Business Unit"
+              name="Per Business Unit V0"
               parent="menu_flamant_marge_group"
               action="flamant_bg_report_action"
               sequence="30"/>

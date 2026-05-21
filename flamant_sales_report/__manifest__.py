@@ -30,6 +30,7 @@
         'data/flamant_margin_report.xml',
         'data/flamant_account_tags.xml',
         'data/flamant_business_unit_report_grouped.xml',
+        'data/flamant_business_unit_report_pj.xml',
         'data/flamant_locked_margin_data.xml',
     ],
     'assets': {
